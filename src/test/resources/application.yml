@@ -1,0 +1,48 @@
+spring:
+  profiles:
+    active: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: "test-secret-key-for-testing-purposes-only-make-it-long-enough"
+  expirationMs: 3600000
+  refreshTokenExpirationMs: 86400000
+  tokenPrefix: "Bearer "
+  issuer: "mymate"
+  audiences:
+    - "mymate-app"
+
+oauth:
+  google:
+    client-id: "test-google-client-id"
+    playground-client-id: "test-playground-client-id"
+  kakao:
+    client-id: "test-kakao-client-id"
+  naver:
+    client-id: "test-naver-client-id"
+    client-secret: "test-naver-client-secret"
+
+token:
+  store:
+    impl: lua
+  refresh:
+    ttl-seconds: 1209600
+  hmac-secret: "test-hmac-secret"
+
+logging:
+  level:
+    com.mymate.mymate: DEBUG
