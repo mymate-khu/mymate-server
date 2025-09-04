@@ -23,8 +23,7 @@ import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.dto.AgreementResponse;
 import com.mymate.mymate.term.service.AgreementService;
 import com.mymate.mymate.auth.jwt.UserPrincipal;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -89,15 +88,9 @@ public class AuthController {
             summary = "약관 동의 저장",
             description = "필수 약관 검증 후 동의 내역을 저장합니다. 로그인 직후 가입 미완 사용자용."
     )
-    public ResponseEntity<ApiResponse<AgreementResponse>> saveAgreements(@RequestBody AgreementRequest body) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long memberId = null;
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
-            memberId = principal.getId();
-        }
-        if (memberId == null) {
-            memberId = 0L; // 비인증 요청 대비 fallback
-        }
+    public ResponseEntity<ApiResponse<AgreementResponse>> saveAgreements(@AuthenticationPrincipal UserPrincipal principal,
+                                                                         @RequestBody AgreementRequest body) {
+        Long memberId = principal != null ? principal.getId() : 0L;
         AgreementResponse result = agreementService.agree(memberId, body);
         return ApiResponse.onSuccess(TermSuccessStatus.AGREEMENT_SAVED, result);
     }

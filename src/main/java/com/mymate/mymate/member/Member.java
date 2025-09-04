@@ -1,6 +1,6 @@
 package com.mymate.mymate.member;
 
-import com.mymate.mymate.auth.enums.OauthProvider;
+import com.mymate.mymate.auth.enums.AuthProvider;
 import com.mymate.mymate.common.entity.BaseEntity;
 import com.mymate.mymate.member.enums.Role;
 import jakarta.persistence.*;
@@ -29,7 +29,7 @@ public class Member extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OauthProvider provider;
+    private AuthProvider provider;
 
     @Column(nullable = false, length = 191)
     private String providerUserId;

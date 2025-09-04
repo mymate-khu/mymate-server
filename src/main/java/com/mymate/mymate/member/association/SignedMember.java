@@ -20,7 +20,7 @@ public class SignedMember {
     private final Role role;
     private final Boolean isNewMember;
     private final Boolean isSignUpCompleted;
-            
+
     public static SignedMember of(Member member, Boolean isNewMember) {
         return new SignedMember(member.getId(), member.getEmail(), member.getUsername(),
                 member.getRole(), isNewMember, member.isSignUpCompleted());

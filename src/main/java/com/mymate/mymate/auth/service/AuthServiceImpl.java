@@ -57,15 +57,21 @@ public class AuthServiceImpl implements AuthService {
             long id = (member != null) ? member.getId() : Math.abs((long) email.hashCode());
             boolean isSignUpCompleted = (member != null) && member.isSignUpCompleted();
 
-            // member가 null이면 액세스 토큰만 생성
+            // member가 null이면 임시 Access 토큰만 생성 (약관 동의만 허용)
             if (member == null) {
-                String accessToken = jwtProvider.createAccessToken(id, email, name, Role.USER, isSignUpCompleted);
-                return new TokenResponse(accessToken, email, name, isSignUpCompleted);
+                String accessToken = jwtProvider.createTemporaryAccessToken(id, email, name, Role.USER);
+                return new TokenResponse(accessToken, email, name, false);
             }
 
-            // member가 존재하면 액세스 토큰과 리프레시 토큰 모두 생성
-            TokenPair tokens = issueTokensOnLogin(id, email, name, Role.USER, isSignUpCompleted);
-            return new TokenResponse(tokens.accessToken(), tokens.refreshToken(), tokens.sessionId(), tokens.familyId(), email, name, isSignUpCompleted);
+            // member가 존재해도 가입 미완이면 임시 Access만 발급
+            if (!isSignUpCompleted) {
+                String accessToken = jwtProvider.createTemporaryAccessToken(id, email, name, Role.USER);
+                return new TokenResponse(accessToken, email, name, false);
+            }
+
+            // 가입 완료면 액세스/리프레시 모두 발급
+            TokenPair tokens = issueTokensOnLogin(id, email, name, Role.USER, true);
+            return new TokenResponse(tokens.accessToken(), tokens.refreshToken(), tokens.sessionId(), tokens.familyId(), email, name, true);
         } catch (Exception e) {
             throw new RuntimeException("소셜 로그인 실패: " + e.getMessage(), e);
         }

@@ -22,6 +22,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http.authorizeHttpRequests((authz) -> authz
+                .requestMatchers("/api/auth/agreements").hasAuthority("SCOPE_agreements")
                 .anyRequest().permitAll()
         );
 

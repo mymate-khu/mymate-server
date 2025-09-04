@@ -17,11 +17,12 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final String prefix = "Bearer ";
+    private static final String PREFIX = "Bearer ";
 
     private final SecretKey secretKey;
     private final long expirationMs;
     private final long refreshTokenExpirationMs;
+    private final long temporaryExpirationMs = 5 * 60 * 1000; // 5분
 
     @Autowired
     public JwtProvider(JwtProperties properties) {
@@ -70,6 +71,22 @@ public class JwtProvider {
 
     }
 
+    public String createTemporaryAccessToken(Long id, String email, String name, Role role) {
+        final Date now = new Date();
+        final Date expiry = new Date(now.getTime() + temporaryExpirationMs);
+        return Jwts.builder()
+                .setSubject(String.valueOf(id))
+                .claim("email", email)
+                .claim("memberName", name)
+                .claim("role", role.toString())
+                .claim("scope", "agreements")
+                .claim("temporary", true)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String resolveHeaderToken(String headerValue, String prefix) {
         if (headerValue == null || !headerValue.startsWith(prefix)) {
             return null;
@@ -113,6 +130,15 @@ public class JwtProvider {
     public boolean getIsSignUpCompleted(String token) {
         String isSignUpCompleted = getClaims(token).get("isSignUpCompleted", String.class);
         return isSignUpCompleted != null && Boolean.parseBoolean(isSignUpCompleted);
+    }
+
+    // scope 클레임 조회용 공개 메서드
+    public String getScope(String token) {
+        try {
+            return getClaims(token).get("scope", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Claims getClaims(String token) {
