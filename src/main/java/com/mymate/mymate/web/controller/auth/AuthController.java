@@ -18,6 +18,13 @@ import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
 import com.mymate.mymate.common.exception.token.status.TokenSuccessStatus;
 import com.mymate.mymate.common.exception.member.status.MemberSuccessStatus;
+import com.mymate.mymate.common.exception.term.status.TermSuccessStatus;
+import com.mymate.mymate.term.dto.AgreementRequest;
+import com.mymate.mymate.term.dto.AgreementResponse;
+import com.mymate.mymate.term.service.AgreementService;
+import com.mymate.mymate.auth.jwt.UserPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -27,10 +34,12 @@ public class AuthController {
 
     private final RefreshTokenStore store;
     private final AuthService authService;
+    private final AgreementService agreementService;
 
-    public AuthController(RefreshTokenStore store, AuthService authService) {
+    public AuthController(RefreshTokenStore store, AuthService authService, AgreementService agreementService) {
         this.store = store;
         this.authService = authService;
+        this.agreementService = agreementService;
     }
 
     @PostMapping("/refresh")
@@ -74,5 +83,22 @@ public class AuthController {
         } catch (Exception ex) {
             return ApiResponse.onFailure(TokenErrorStatus.INVALID_REFRESH_TOKEN, null);
         }
+    }
+    @PostMapping("/agreements")
+    @Operation(
+            summary = "약관 동의 저장",
+            description = "필수 약관 검증 후 동의 내역을 저장합니다. 로그인 직후 가입 미완 사용자용."
+    )
+    public ResponseEntity<ApiResponse<AgreementResponse>> saveAgreements(@RequestBody AgreementRequest body) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long memberId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
+            memberId = principal.getId();
+        }
+        if (memberId == null) {
+            memberId = 0L; // 비인증 요청 대비 fallback
+        }
+        AgreementResponse result = agreementService.agree(memberId, body);
+        return ApiResponse.onSuccess(TermSuccessStatus.AGREEMENT_SAVED, result);
     }
 }
