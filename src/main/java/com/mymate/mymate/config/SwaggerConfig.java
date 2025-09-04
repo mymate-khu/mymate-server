@@ -33,8 +33,8 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI TourAPI() {
         Info info = new Info()
-                .title("다녀왔댕 API")
-                .description("다녀왔댕 API 명세서");
+                .title("MYMATE API")
+                .description("MYMATE API 명세서");
 
         String jwtSchemeName = "accessToken";
 

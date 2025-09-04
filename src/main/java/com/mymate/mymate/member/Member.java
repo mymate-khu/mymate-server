@@ -3,7 +3,6 @@ package com.mymate.mymate.member;
 import com.mymate.mymate.auth.enums.OauthProvider;
 import com.mymate.mymate.common.entity.BaseEntity;
 import com.mymate.mymate.member.enums.Role;
-import com.mymate.mymate.petAvatar.PetAvatar;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,9 +14,7 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_member_provider_user", columnNames = {"provider", "providerUserId"})
         },
-        indexes = {
-                @Index(name = "uk_member_nickname", columnList = "nickname", unique = true)
-        }
+        indexes = {}
 )
 @Getter
 @Setter
@@ -40,19 +37,12 @@ public class Member extends BaseEntity {
     @Column(length = 255)
     private String email;
 
+    // 로컬 로그인용 (겸용)
     @Column(length = 40, unique = true)
-    private String nickname;
+    private String username;
 
-    @Column(columnDefinition = "TEXT")
-    private String profileImageUrl;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "petAvatarId", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private PetAvatar petAvatar;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer pointBalance = 0;
+    @Column(length = 100)
+    private String passwordHash;
 
     @Column(nullable = false)
     private boolean isSignUpCompleted;
