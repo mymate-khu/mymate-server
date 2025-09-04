@@ -22,6 +22,8 @@ import com.mymate.mymate.common.exception.term.status.TermSuccessStatus;
 import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.dto.AgreementResponse;
 import com.mymate.mymate.term.service.AgreementService;
+import com.mymate.mymate.auth.dto.LocalLoginRequest;
+import com.mymate.mymate.auth.dto.SignUpRequest;
 import com.mymate.mymate.auth.jwt.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
@@ -82,6 +84,29 @@ public class AuthController {
         } catch (Exception ex) {
             return ApiResponse.onFailure(TokenErrorStatus.INVALID_REFRESH_TOKEN, null);
         }
+    }
+
+    @PostMapping("/login")
+    @Operation(
+            summary = "로컬 로그인",
+            description = "로컬 아이디/비밀번호로 로그인합니다. 가입 완료 시 Access+Refresh, 아니면 방어적 임시 Access만 반환"
+    )
+    public ResponseEntity<ApiResponse<TokenResponse>> localLogin(@RequestBody LocalLoginRequest body) {
+        TokenResponse tokens = authService.localLogin(body);
+        if (tokens.refreshToken == null) {
+            return ApiResponse.onSuccess(MemberSuccessStatus.TERMS_AGREEMENT_REQUIRED, tokens);
+        }
+        return ApiResponse.onSuccess(MemberSuccessStatus.SIGN_IN_SUCCESS, tokens);
+    }
+
+    @PostMapping("/signup")
+    @Operation(
+            summary = "로컬 회원가입",
+            description = "회원 생성과 동시에 약관 동의를 저장하고 최종 Access+Refresh를 발급합니다."
+    )
+    public ResponseEntity<ApiResponse<TokenResponse>> signUp(@RequestBody SignUpRequest body) {
+        TokenResponse tokens = authService.signUp(body);
+        return ApiResponse.onSuccess(MemberSuccessStatus.SIGN_UP_SUCCESS, tokens);
     }
     @PostMapping("/agreements")
     @Operation(
