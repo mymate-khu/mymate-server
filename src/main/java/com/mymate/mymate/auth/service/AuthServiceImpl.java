@@ -19,6 +19,8 @@ import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.service.AgreementService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.mymate.mymate.auth.service.PhoneVerificationService;
+import com.mymate.mymate.common.exception.phone.PhoneHandler;
+import com.mymate.mymate.common.exception.phone.status.PhoneErrorStatus;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -120,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 휴대폰 인증 확인
         if (!phoneVerificationService.isPhoneVerified(request.phone)) {
-            throw new RuntimeException("휴대폰 인증이 필요합니다.");
+            throw new PhoneHandler(PhoneErrorStatus.NOT_VERIFIED);
         }
 
         String passwordHash = passwordEncoder.encode(request.passwordEncrypted);
