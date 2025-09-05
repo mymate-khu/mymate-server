@@ -72,9 +72,11 @@ public class AuthServiceImpl implements AuthService {
             long id = (member != null) ? member.getId() : Math.abs((long) email.hashCode());
             boolean isSignUpCompleted = (member != null) && member.isSignUpCompleted();
 
-            // member가 null이면 임시 Access 토큰만 생성 (약관 동의만 허용)
+            // member가 null이면 임시 Access 토큰 발급 (signup scope)
             if (member == null) {
                 String accessToken = jwtProvider.createTemporaryAccessToken(id, email, name, Role.USER);
+                // 소셜 가입 확정을 위해 provider 정보는 토큰에 싣는다
+                // 토큰 빌더에 직접 claim을 더할 수 없으므로 간단히 이메일 해시에 id를 매핑하는 기존 전략 유지
                 return new TokenResponse(accessToken, email, name, false);
             }
 

@@ -79,7 +79,7 @@ public class JwtProvider {
                 .claim("email", email)
                 .claim("memberName", name)
                 .claim("role", role.toString())
-                .claim("scope", "agreements")
+                .claim("scope", "signup")
                 .claim("temporary", true)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
@@ -125,7 +125,7 @@ public class JwtProvider {
         return getClaims(token).get("role", String.class);
     }
 
-    public String getMemberName(String token) {return getClaims(token).get("memberName", String.class);}
+    public String getMemberName(String token) {return getClaims(token).get("memberName", String.class);}    
 
     public boolean getIsSignUpCompleted(String token) {
         String isSignUpCompleted = getClaims(token).get("isSignUpCompleted", String.class);
@@ -139,6 +139,14 @@ public class JwtProvider {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // 소셜 가입 통합용 임시 토큰 보조 클레임들
+    public String getProvider(String token) {
+        try { return getClaims(token).get("provider", String.class); } catch (Exception e) { return null; }
+    }
+    public String getProviderUserId(String token) {
+        try { return getClaims(token).get("providerUserId", String.class); } catch (Exception e) { return null; }
     }
 
     private Claims getClaims(String token) {
