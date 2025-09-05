@@ -9,7 +9,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import com.mymate.mymate.common.exception.general.GeneralException;
 import com.mymate.mymate.common.exception.general.status.ErrorStatus;
+import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,13 +56,24 @@ public class ExceptionAdvice {
     }
 
     /**
+     * ExpiredJwtException 처리 - 토큰 만료
+     * @param exception ExpiredJwtException
+     * @return ApiResponse - UNAUTHORIZED
+     */
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<String>> handleExpiredJwtException(ExpiredJwtException exception) {
+        log.error("JWT_:CTRL:EXPIRED:::ExpiredJwtException msg({})", exception.getMessage());
+        return ApiResponse.onFailure(TokenErrorStatus.ACCESS_TOKEN_EXPIRED, exception.getMessage());
+    }
+
+    /**
      * JwtException 처리
      * @param exception JwtException
-     * @return ApiResponse - FORBIDDEN
+     * @return ApiResponse - UNAUTHORIZED
      */
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse<String>> handleJwtException(JwtException exception) {
         log.error("JWT_:CTRL:INVALID:::Exception msg({})", exception.getMessage());
-        return ApiResponse.onFailure(ErrorStatus.FORBIDDEN, exception.getMessage());
+        return ApiResponse.onFailure(TokenErrorStatus.INVALID_ACCESS_TOKEN, exception.getMessage());
     }
 }

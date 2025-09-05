@@ -2,7 +2,11 @@ package com.mymate.mymate.web.controller.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.mymate.mymate.auth.dto.LocalLoginRequest;
 import com.mymate.mymate.auth.dto.RefreshRequest;
@@ -70,8 +74,8 @@ public class AuthController {
 
     @PostMapping("/login/social")
     @Operation(
-            summary = "소셜 로그인 및 회원가입",
-            description = "가입되어 있는 경우는 액세스/리프레시 주고, 안되어있으면 액세스만 줍니다. 판단은 isSignUpCompleted로. 리프레시 만료되면 사용"
+            summary = "소셜 로그인",
+            description = "가입되어 있는 경우는 액세스/리프레시 줍니다다 판단은 isSignUpCompleted로. 리프레시 만료되면 사용"
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(

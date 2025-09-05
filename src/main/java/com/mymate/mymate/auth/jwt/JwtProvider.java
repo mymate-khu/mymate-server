@@ -157,7 +157,7 @@ public class JwtProvider {
             return true;
         } catch (ExpiredJwtException e) {
             log.info("JWT_:PROV:ERR_:::만료된 토큰입니다. msg({})", e.getMessage());
-            throw new JwtException(e.getMessage());
+            throw new ExpiredJwtException(e.getHeader(), e.getClaims(), e.getMessage());
         } catch (UnsupportedJwtException | MalformedJwtException | SignatureException e) {
             log.info("JWT_:PROV:ERR_:::위변조가 발생한 토큰입니다. msg({})", e.getMessage());
             throw new JwtException(e.getMessage());

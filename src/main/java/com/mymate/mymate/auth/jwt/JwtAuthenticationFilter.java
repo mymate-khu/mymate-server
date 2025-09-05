@@ -1,9 +1,21 @@
 package com.mymate.mymate.auth.jwt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mymate.mymate.common.exception.ApiResponse;
 import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
+
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,16 +23,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
 @Slf4j
 @Component
@@ -48,6 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 다음 필터로 요청 전달
             filterChain.doFilter(request, response);
 
+        } catch (ExpiredJwtException e) {
+            handleExpiredJwtException(response, e);
         } catch (JwtException e) {
             handleJwtException(response, e);
         }
@@ -72,6 +76,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return userPrincipal;
+    }
+
+    private void handleExpiredJwtException(HttpServletResponse response, ExpiredJwtException e) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(
+                objectMapper.writeValueAsString(
+                        ApiResponse.onFailure(TokenErrorStatus.ACCESS_TOKEN_EXPIRED, e.getMessage())
+                )
+        );
     }
 
     private void handleJwtException(HttpServletResponse response, JwtException e) throws IOException {
