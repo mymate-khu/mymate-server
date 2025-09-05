@@ -18,6 +18,7 @@ import com.mymate.mymate.auth.enums.AuthProvider;
 import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.service.AgreementService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.mymate.mymate.auth.service.PhoneVerificationService;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -28,14 +29,16 @@ public class AuthServiceImpl implements AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final AgreementService agreementService;
+    private final PhoneVerificationService phoneVerificationService;
 
-    public AuthServiceImpl(JwtProvider jwtProvider, RefreshTokenStore refreshTokenStore, SocialTokenVerifier socialTokenVerifier, MemberRepository memberRepository, PasswordEncoder passwordEncoder, AgreementService agreementService) {
+    public AuthServiceImpl(JwtProvider jwtProvider, RefreshTokenStore refreshTokenStore, SocialTokenVerifier socialTokenVerifier, MemberRepository memberRepository, PasswordEncoder passwordEncoder, AgreementService agreementService, PhoneVerificationService phoneVerificationService) {
         this.jwtProvider = jwtProvider;
         this.refreshTokenStore = refreshTokenStore;
         this.socialTokenVerifier = socialTokenVerifier;
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.agreementService = agreementService;
+        this.phoneVerificationService = phoneVerificationService;
     }
 
     @Override
@@ -113,6 +116,11 @@ public class AuthServiceImpl implements AuthService {
         // username 중복 체크
         if (memberRepository.findFirstByUsername(request.username).isPresent()) {
             throw new RuntimeException("이미 사용 중인 아이디입니다.");
+        }
+
+        // 휴대폰 인증 확인
+        if (!phoneVerificationService.isPhoneVerified(request.phone)) {
+            throw new RuntimeException("휴대폰 인증이 필요합니다.");
         }
 
         String passwordHash = passwordEncoder.encode(request.passwordEncrypted);

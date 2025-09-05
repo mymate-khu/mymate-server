@@ -1,31 +1,32 @@
 package com.mymate.mymate.web.controller.auth;
 
-import com.mymate.mymate.common.exception.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mymate.mymate.auth.dto.LocalLoginRequest;
 import com.mymate.mymate.auth.dto.RefreshRequest;
+import com.mymate.mymate.auth.dto.SignUpRequest;
 import com.mymate.mymate.auth.dto.SocialLoginRequest;
 import com.mymate.mymate.auth.dto.TokenResponse;
+import com.mymate.mymate.auth.jwt.UserPrincipal;
 import com.mymate.mymate.auth.service.AuthService;
+import com.mymate.mymate.auth.service.PhoneVerificationService;
 import com.mymate.mymate.auth.token.RefreshTokenStore;
-
 import com.mymate.mymate.common.exception.ApiErrorCodeExample;
+import com.mymate.mymate.common.exception.ApiResponse;
+import com.mymate.mymate.common.exception.phone.status.PhoneSuccessStatus;
 import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
-import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
-import com.mymate.mymate.common.exception.token.status.TokenSuccessStatus;
 import com.mymate.mymate.common.exception.member.status.MemberSuccessStatus;
 import com.mymate.mymate.common.exception.term.status.TermSuccessStatus;
+import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
+import com.mymate.mymate.common.exception.token.status.TokenSuccessStatus;
 import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.dto.AgreementResponse;
 import com.mymate.mymate.term.service.AgreementService;
-import com.mymate.mymate.auth.dto.LocalLoginRequest;
-import com.mymate.mymate.auth.dto.SignUpRequest;
-import com.mymate.mymate.auth.jwt.UserPrincipal;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -36,11 +37,13 @@ public class AuthController {
     private final RefreshTokenStore store;
     private final AuthService authService;
     private final AgreementService agreementService;
+    private final PhoneVerificationService phoneVerificationService;
 
-    public AuthController(RefreshTokenStore store, AuthService authService, AgreementService agreementService) {
+    public AuthController(RefreshTokenStore store, AuthService authService, AgreementService agreementService, PhoneVerificationService phoneVerificationService) {
         this.store = store;
         this.authService = authService;
         this.agreementService = agreementService;
+        this.phoneVerificationService = phoneVerificationService;
     }
 
     @PostMapping("/refresh")
@@ -119,4 +122,5 @@ public class AuthController {
         AgreementResponse result = agreementService.agree(memberId, body);
         return ApiResponse.onSuccess(TermSuccessStatus.AGREEMENT_SAVED, result);
     }
+
 }
