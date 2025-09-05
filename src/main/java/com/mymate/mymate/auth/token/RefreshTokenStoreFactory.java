@@ -1,5 +1,6 @@
 package com.mymate.mymate.auth.token;
 
+import com.mymate.mymate.auth.jwt.JwtProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -21,12 +22,13 @@ public class RefreshTokenStoreFactory {
                                                RedisTemplate<String, String> redisTemplate,
                                                TokenHasher tokenHasher,
                                                DefaultRedisScript<String> rotateScript,
+                                               JwtProvider jwtProvider,
                                                @Value("${token.refresh.ttl-seconds}") long ttlSeconds) {
         String impl = props.getImpl();
         if ("sync".equalsIgnoreCase(impl)) {
-            return new SynchronizedRedisStore(redisTemplate, tokenHasher, ttlSeconds);
+            return new SynchronizedRedisStore(redisTemplate, tokenHasher, ttlSeconds, jwtProvider);
         }
-        return new LuaAtomicRedisStore(redisTemplate, tokenHasher, rotateScript, ttlSeconds);
+        return new LuaAtomicRedisStore(redisTemplate, tokenHasher, rotateScript, ttlSeconds, jwtProvider);
     }
 }
 

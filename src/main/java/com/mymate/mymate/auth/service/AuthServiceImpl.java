@@ -3,24 +3,25 @@ package com.mymate.mymate.auth.service;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.mymate.mymate.auth.dto.TokenResponse;
 import com.mymate.mymate.auth.dto.LocalLoginRequest;
 import com.mymate.mymate.auth.dto.SignUpRequest;
+import com.mymate.mymate.auth.dto.TokenResponse;
+import com.mymate.mymate.auth.enums.AuthProvider;
 import com.mymate.mymate.auth.jwt.JwtProvider;
 import com.mymate.mymate.auth.oauth.SocialTokenVerifier;
 import com.mymate.mymate.auth.token.RefreshTokenStore;
+import com.mymate.mymate.common.exception.member.MemberHandler;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
+import com.mymate.mymate.common.exception.phone.PhoneHandler;
+import com.mymate.mymate.common.exception.phone.status.PhoneErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.enums.Role;
 import com.mymate.mymate.member.repository.MemberRepository;
-import com.mymate.mymate.auth.enums.AuthProvider;
 import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.service.AgreementService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import com.mymate.mymate.auth.service.PhoneVerificationService;
-import com.mymate.mymate.common.exception.phone.PhoneHandler;
-import com.mymate.mymate.common.exception.phone.status.PhoneErrorStatus;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -46,11 +47,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public TokenPair issueTokensOnLogin(Long id, String email, String name, Role role, boolean signUpCompleted) {
         String access = jwtProvider.createAccessToken(id, email, name, role, signUpCompleted);
-        String refresh = jwtProvider.createRefreshToken(id, email, name, role, signUpCompleted);
-
+        
         String uid = String.valueOf(id);
         String sid = UUID.randomUUID().toString();
         String familyId = UUID.randomUUID().toString();
+        
+        // sid와 familyId가 포함된 리프레시 토큰 생성
+        String refresh = jwtProvider.createRefreshToken(id, email, name, role, signUpCompleted, sid, familyId);
 
         long iat = Instant.now().getEpochSecond();
         long exp = iat + jwtProvider.getRemainingValidity(refresh); // seconds
@@ -66,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
             SocialTokenVerifier.SocialUserInfo info = socialTokenVerifier.verify(provider, token);
             String email = info.getEmail();
             String name = info.getName();
+            String providerUserId = info.getProviderUserId();
 
             // 기존 회원 조회 (email 기준). 없으면 임시 id 생성 및 가입 미완으로 간주
             Member member = memberRepository.findByEmail(email).orElse(null);
@@ -74,9 +78,7 @@ public class AuthServiceImpl implements AuthService {
 
             // member가 null이면 임시 Access 토큰 발급 (signup scope)
             if (member == null) {
-                String accessToken = jwtProvider.createTemporaryAccessToken(id, email, name, Role.USER);
-                // 소셜 가입 확정을 위해 provider 정보는 토큰에 싣는다
-                // 토큰 빌더에 직접 claim을 더할 수 없으므로 간단히 이메일 해시에 id를 매핑하는 기존 전략 유지
+                String accessToken = jwtProvider.createTemporaryAccessToken(id, email, name, Role.USER, provider, providerUserId);
                 return new TokenResponse(accessToken, email, name, false);
             }
 
@@ -90,18 +92,18 @@ public class AuthServiceImpl implements AuthService {
             TokenPair tokens = issueTokensOnLogin(id, email, name, Role.USER, true);
             return new TokenResponse(tokens.accessToken(), tokens.refreshToken(), tokens.sessionId(), tokens.familyId(), email, name, true);
         } catch (Exception e) {
-            throw new RuntimeException("소셜 로그인 실패: " + e.getMessage(), e);
+            throw new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND);
         }
     }
 
     @Override
     public TokenResponse localLogin(LocalLoginRequest request) {
-        Member member = memberRepository.findFirstByUsername(request.username).orElse(null);
+        Member member = memberRepository.findFirstByUserId(request.userId).orElse(null);
         if (member == null || member.getPasswordHash() == null) {
-            throw new RuntimeException("존재하지 않는 사용자이거나 로컬 계정이 아닙니다.");
+            throw new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND);
         }
         if (!passwordEncoder.matches(request.passwordEncrypted, member.getPasswordHash())) {
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+            throw new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND);
         }
 
         boolean isSignUpCompleted = member.isSignUpCompleted();
@@ -117,25 +119,58 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse signUp(SignUpRequest request) {
-        // username 중복 체크
-        if (memberRepository.findFirstByUsername(request.username).isPresent()) {
-            throw new RuntimeException("이미 사용 중인 아이디입니다.");
-        }
+        // 소셜/로컬 분기: Authorization 헤더로 전달된 임시 토큰 기반
+        String signUpToken = request.token;
+        String scope = signUpToken != null ? jwtProvider.getScope(signUpToken) : null;
+        String providerClaim = signUpToken != null ? jwtProvider.getProvider(signUpToken) : null;
+        boolean isSocial = signUpToken != null && "signup".equals(scope) && providerClaim != null;
 
-        // 휴대폰 인증 확인
-        if (!phoneVerificationService.isPhoneVerified(request.phone)) {
-            throw new PhoneHandler(PhoneErrorStatus.NOT_VERIFIED);
-        }
+        Member member;
+        if (isSocial) {
+            // 소셜 가입: 폰 인증 필수
+            if (!phoneVerificationService.isPhoneVerified(request.phone)) {
+                throw new PhoneHandler(PhoneErrorStatus.NOT_VERIFIED);
+            }
+            // 비밀번호는 불필요
+            // 임시 토큰에서 provider/providerUserId/email/name 추출
+            String provider = jwtProvider.getProvider(signUpToken);
+            String providerUserId = jwtProvider.getProviderUserId(signUpToken);
+            String emailFromToken = jwtProvider.getEmail(signUpToken);
+            String nameFromToken = jwtProvider.getMemberName(signUpToken);
+            AuthProvider authProvider = null;
+            try { authProvider = provider != null ? AuthProvider.valueOf(provider) : AuthProvider.LOCAL; } catch (Exception ignore) { authProvider = AuthProvider.LOCAL; }
 
-        String passwordHash = passwordEncoder.encode(request.passwordEncrypted);
-        Member member = Member.builder()
-                .provider(AuthProvider.LOCAL)
-                .providerUserId(request.username)
-                .email(request.email)
-                .username(request.username)
-                .passwordHash(passwordHash)
-                .isSignUpCompleted(true)
-                .build();
+            member = Member.builder()
+                    .provider(authProvider)
+                    .providerUserId(providerUserId != null ? providerUserId : request.email)
+                    .email(emailFromToken != null ? emailFromToken : request.email)
+                    .userId(null)
+                    .username(null)
+                    .passwordHash(null)
+                    .isSignUpCompleted(true)
+                    .build();
+        } else {
+            // userId 중복 체크
+            if (memberRepository.findFirstByUserId(request.userId).isPresent()) {
+                throw new MemberHandler(MemberErrorStatus.MEMBER_ALREADY_EXISTS);
+            }
+
+            // 휴대폰 인증 확인
+            if (!phoneVerificationService.isPhoneVerified(request.phone)) {
+                throw new PhoneHandler(PhoneErrorStatus.NOT_VERIFIED);
+            }
+
+            String passwordHash = passwordEncoder.encode(request.passwordEncrypted);
+            member = Member.builder()
+                    .provider(AuthProvider.LOCAL)
+                    .providerUserId(request.userId)
+                    .email(request.email)
+                    .username(request.name)
+                    .passwordHash(passwordHash)
+                    .userId(request.userId)
+                    .isSignUpCompleted(true)
+                    .build();
+        }
         member = memberRepository.save(member);
 
         // 약관 동의 저장
@@ -164,19 +199,20 @@ public class AuthServiceImpl implements AuthService {
              String roleStr = jwtProvider.getRole(oldRefreshToken);
              Role role = Role.valueOf(roleStr);
              
-             // 리프레시 토큰 회전
-             String uid = String.valueOf(id);
-             String sid = UUID.randomUUID().toString();
-             String familyId = UUID.randomUUID().toString();
+             // 리프레시 토큰에서 기존 sid와 familyId 추출
+             String sid = jwtProvider.getSessionId(oldRefreshToken);
+             String familyId = jwtProvider.getFamilyId(oldRefreshToken);
              
-             RefreshTokenStore.RotateResult result = refreshTokenStore.rotate(oldRefreshToken, uid, sid, familyId);
+             // JWT 토큰 기반 리프레시 토큰 회전
+             String uid = String.valueOf(id);
+             RefreshTokenStore.RotateResult result = refreshTokenStore.rotateWithJwt(oldRefreshToken, uid, sid, familyId, id, email, name, role, true);
              
              // 새 액세스 토큰 생성
              String newAccessToken = jwtProvider.createAccessToken(id, email, name, role, true);
              
-             return new TokenResponse(newAccessToken, result.newRefreshRaw(), sid, familyId, email, name, true);
+             return new TokenResponse(newAccessToken, result.newRefreshRaw(), result.sid(), result.familyId(), email, name, true);
          } catch (Exception e) {
-             throw new RuntimeException("토큰 갱신 실패: " + e.getMessage(), e);
+             throw new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND);
          }
      }
  }

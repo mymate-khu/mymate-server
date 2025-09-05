@@ -11,8 +11,8 @@ import com.mymate.mymate.member.Member;
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByEmail(String email);
-    Optional<Member> findByUsername(String username);
-    Optional<Member> findFirstByUsername(String username);
+    Optional<Member> findByUserId(String userId);
+    Optional<Member> findFirstByUserId(String userId);
 }
 
 

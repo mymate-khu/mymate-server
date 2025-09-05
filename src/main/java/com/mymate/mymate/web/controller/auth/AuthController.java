@@ -2,10 +2,7 @@ package com.mymate.mymate.web.controller.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.mymate.mymate.auth.dto.LocalLoginRequest;
 import com.mymate.mymate.auth.dto.RefreshRequest;
@@ -107,7 +104,11 @@ public class AuthController {
             summary = "로컬 회원가입",
             description = "회원 생성과 동시에 약관 동의를 저장하고 최종 Access+Refresh를 발급합니다."
     )
-    public ResponseEntity<ApiResponse<TokenResponse>> signUp(@RequestBody SignUpRequest body) {
+    public ResponseEntity<ApiResponse<TokenResponse>> signUp(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                                            @RequestBody SignUpRequest body) {
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            body.token = authorization.substring("Bearer ".length()).trim();
+        }
         TokenResponse tokens = authService.signUp(body);
         return ApiResponse.onSuccess(MemberSuccessStatus.SIGN_UP_SUCCESS, tokens);
     }

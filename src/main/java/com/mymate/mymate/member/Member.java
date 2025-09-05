@@ -52,6 +52,10 @@ public class Member extends BaseEntity {
 
     // 로컬 로그인용 (겸용)
     @Column(length = 40, unique = true)
+    private String userId;
+
+    // 표시용 이름(닉네임)
+    @Column(length = 60)
     private String username;
 
     @Column(length = 100)
