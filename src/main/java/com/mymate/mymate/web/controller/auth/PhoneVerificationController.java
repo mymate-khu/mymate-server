@@ -12,11 +12,13 @@ import com.mymate.mymate.common.exception.phone.status.PhoneSuccessStatus;
 import com.mymate.mymate.common.exception.phone.status.PhoneErrorStatus;
 import com.mymate.mymate.common.exception.phone.PhoneHandler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth/phone")
 @RequiredArgsConstructor
+@Tag(name = "2-3. 휴대폰 인증", description = "휴대폰 인증 요청 및 검증")
 public class PhoneVerificationController {
 
     private final PhoneVerificationService phoneVerificationService;
@@ -24,7 +26,8 @@ public class PhoneVerificationController {
     @PostMapping("/request-code")
     @Operation(
             summary = "인증번호 요청",
-            description = "전화번호로 SMS 인증번호를 발송합니다."
+            description = "전화번호로 SMS 인증번호를 발송합니다.",
+            tags = {"2. 휴대폰 인증 요청"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -40,7 +43,8 @@ public class PhoneVerificationController {
     @PostMapping("/verify-code")
     @Operation(
             summary = "인증번호 검증",
-            description = "전송된 인증번호를 검증합니다."
+            description = "전송된 인증번호를 검증합니다.",
+            tags = {"3. 휴대폰 인증 검증"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -59,7 +63,8 @@ public class PhoneVerificationController {
     @GetMapping("/check-verified/{phone}")
     @Operation(
             summary = "전화번호 인증 상태 확인",
-            description = "전화번호의 인증 상태를 확인합니다."
+            description = "전화번호의 인증 상태를 확인합니다.",
+            tags = {"3. 휴대폰 인증 검증"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(

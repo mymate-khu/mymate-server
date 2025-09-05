@@ -31,9 +31,11 @@ import com.mymate.mymate.term.dto.AgreementResponse;
 import com.mymate.mymate.term.service.AgreementService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1. 소셜 로그인/가입", description = "소셜 로그인 및 회원가입 시작")
 public class AuthController {
 
     private final RefreshTokenStore store;
@@ -51,7 +53,8 @@ public class AuthController {
     @PostMapping("/refresh")
     @Operation(
             summary = "리프레시 토큰 회전",
-            description = "기존 리프레시 토큰을 검증 후 새 액세스 토큰과 리프레시 토큰을 발급합니다. 자동 로그인할 때 사용합니다다"
+            description = "기존 리프레시 토큰을 검증 후 새 액세스 토큰과 리프레시 토큰을 발급합니다. 자동 로그인할 때 사용합니다다",
+            tags = {"5. 토큰 갱신"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -75,7 +78,8 @@ public class AuthController {
     @PostMapping("/login/social")
     @Operation(
             summary = "소셜 로그인",
-            description = "가입되어 있는 경우는 액세스/리프레시 줍니다다 판단은 isSignUpCompleted로. 리프레시 만료되면 사용"
+            description = "가입되어 있는 경우는 액세스/리프레시 줍니다 판단은 isSignUpCompleted로. 리프레시 만료되면 사용",
+            tags = {"1. 소셜 로그인/가입"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -125,7 +129,8 @@ public class AuthController {
     @PostMapping("/signup")
     @Operation(
             summary = "로컬 회원가입",
-            description = "회원 생성과 동시에 약관 동의를 저장하고 최종 Access+Refresh를 발급합니다. 휴대폰 인증 후 사용"
+            description = "회원 생성과 동시에 약관 동의를 저장하고 최종 Access+Refresh를 발급합니다. 휴대폰 인증 후 사용",
+            tags = {"4. 회원가입 완료"}
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
