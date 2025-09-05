@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import com.mymate.mymate.common.exception.ApiErrorCodeExample;
 import com.mymate.mymate.common.exception.ExplainError;
 import com.mymate.mymate.common.exception.general.status.ErrorResponse;
+import com.mymate.mymate.common.exception.general.status.SuccessResponse;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -149,9 +150,39 @@ public class SwaggerConfig {
             String message = code.getMessage();
 
             Map<String, Object> response = new LinkedHashMap<>();
-            response.put("statusCode", status);
-            response.put("errorCode", codeStr);
+            response.put("isSuccess", false);
+            response.put("code", codeStr);
             response.put("message", message);
+            response.put("data", null);
+
+            Example example = new Example();
+            example.setValue(response);
+
+            // 설명 어노테이션 읽기
+            String description = null;
+            try {
+                // Enum으로 안전하게 캐스팅
+                Enum<?> enumConstant = (Enum<?>) code;
+                description = code.getClass().getField(enumConstant.name())
+                        .getAnnotation(ExplainError.class).value();
+            } catch (Exception e) {
+                description = message;
+            }
+            example.setDescription(description);
+
+            return new ExampleHolder(example, status, codeStr);
+        }
+
+        public static ExampleHolder ofSuccess(SuccessResponse code) {
+            int status = code.getSuccessStatus().value();
+            String codeStr = code.getCode();
+            String message = code.getMessage();
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("isSuccess", true);
+            response.put("code", codeStr);
+            response.put("message", message);
+            response.put("data", null); // 실제 데이터는 API마다 다르므로 null로 표시
 
             Example example = new Example();
             example.setValue(response);

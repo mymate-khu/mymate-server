@@ -53,7 +53,6 @@ public class AgreementService {
 
         if (missingRequired) {
             return AgreementResponse.builder()
-                    .success(false)
                     .message("필수 약관 동의가 누락되었습니다.")
                     .missingRequired(true)
                     .missingService(missingService)
@@ -70,7 +69,6 @@ public class AgreementService {
         upsertAgreement(memberId, "MARKETING", getOrDefault(codeToAgreed, "MARKETING"));
 
         return AgreementResponse.builder()
-                .success(true)
                 .message("약관 동의가 저장되었습니다.")
                 .missingRequired(false)
                 .missingService(false)

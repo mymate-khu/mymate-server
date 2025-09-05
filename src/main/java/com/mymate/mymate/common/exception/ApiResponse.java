@@ -10,7 +10,7 @@ import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 
 @Getter
-@JsonPropertyOrder({"isSuccess", "code", "message", "result"})
+@JsonPropertyOrder({"isSuccess", "code", "message", "data"})
 public class ApiResponse<T>  {
 
     @JsonProperty("isSuccess")

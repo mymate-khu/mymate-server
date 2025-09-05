@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AgreementResponse {
 
-    private boolean success;
-
     private String message;
 
     // 부족한 필수 항목이 있을 경우 어떤 항목이 부족한지 전달
