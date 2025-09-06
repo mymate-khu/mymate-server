@@ -4,6 +4,10 @@ spring:
     redis:
       host: ${REDIS_HOST:redis}  # 도커 컨테이너명으로 기본 설정
       password: ${REDIS_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
 
 # 프로덕션 환경 로깅 설정
 logging:
@@ -20,7 +24,7 @@ jwt:
   expirationMs: 7200000 # 2시간 (밀리초)
   refreshTokenExpirationMs: 2592000000 # 30일 (밀리초)
   tokenPrefix: "Bearer "
-  issuer: "tourapi"
+  issuer: "mymate"
   audiences:
     - "web"
     - "mobile"
