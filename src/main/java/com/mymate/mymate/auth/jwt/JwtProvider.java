@@ -1,27 +1,37 @@
 package com.mymate.mymate.auth.jwt;
 
 
-import com.mymate.mymate.member.enums.Role;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
-import lombok.extern.slf4j.Slf4j;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import com.mymate.mymate.member.enums.Role;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
 public class JwtProvider {
 
-    private static final String prefix = "Bearer ";
+    private static final String PREFIX = "Bearer ";
 
     private final SecretKey secretKey;
     private final long expirationMs;
     private final long refreshTokenExpirationMs;
+    private final long temporaryExpirationMs = 5 * 60 * 1000; // 5분
 
     @Autowired
     public JwtProvider(JwtProperties properties) {
@@ -36,6 +46,12 @@ public class JwtProvider {
         return createToken(id, email, name, role, isSignUpCompleted, expirationMs);
     }
 
+    // 리프레시 토큰 생성 (세션 정보 포함)
+    public String createRefreshToken(Long id, String email, String name, Role role, boolean isSignUpCompleted, String sid, String familyId) {
+        return createTokenWithSession(id, email, name, role, isSignUpCompleted, refreshTokenExpirationMs, sid, familyId);
+    }
+
+    // 리프레시 토큰 생성 (세션 정보 없음 - 하위 호환용)
     public String createRefreshToken(Long id, String email, String name, Role role, boolean isSignUpCompleted) {
         return createToken(id, email, name, role, isSignUpCompleted, refreshTokenExpirationMs);
     }
@@ -70,6 +86,64 @@ public class JwtProvider {
 
     }
 
+    private String createTokenWithSession(
+            Long id, String email, String name, Role role, boolean isSignUpCompleted, long expirationMs, String sid, String familyId
+    ) {
+        final Date now = new Date();
+        final Date expiry = new Date(now.getTime() + expirationMs);
+
+        log.info("JWT_:PROV:CRTE:::세션 정보가 포함된 토큰을 생성합니다. createdAt({}),expiredAt({}), sid({}), familyId({})", now, expiry, sid, familyId);
+
+        return Jwts.builder()
+                .setSubject(String.valueOf(id))
+                .claim("email", email)
+                .claim("memberName", name)
+                .claim("role", role.toString())
+                .claim("isSignUpCompleted", String.valueOf(isSignUpCompleted))
+                .claim("sid", sid)
+                .claim("familyId", familyId)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+
+    }
+
+    public String createTemporaryAccessToken(Long id, String email, String name, Role role) {
+        final Date now = new Date();
+        final Date expiry = new Date(now.getTime() + temporaryExpirationMs);
+        return Jwts.builder()
+                .setSubject(String.valueOf(id))
+                .claim("email", email)
+                .claim("memberName", name)
+                .claim("role", role.toString())
+                .claim("scope", "signup")
+                .claim("temporary", true)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // 소셜 가입용 임시 토큰 (provider 정보 포함)
+    public String createTemporaryAccessToken(Long id, String email, String name, Role role, String provider, String providerUserId) {
+        final Date now = new Date();
+        final Date expiry = new Date(now.getTime() + temporaryExpirationMs);
+        return Jwts.builder()
+                .setSubject(String.valueOf(id))
+                .claim("email", email)
+                .claim("memberName", name)
+                .claim("role", role.toString())
+                .claim("scope", "signup")
+                .claim("temporary", true)
+                .claim("provider", provider)
+                .claim("providerUserId", providerUserId)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String resolveHeaderToken(String headerValue, String prefix) {
         if (headerValue == null || !headerValue.startsWith(prefix)) {
             return null;
@@ -83,7 +157,7 @@ public class JwtProvider {
             return true;
         } catch (ExpiredJwtException e) {
             log.info("JWT_:PROV:ERR_:::만료된 토큰입니다. msg({})", e.getMessage());
-            throw new JwtException(e.getMessage());
+            throw new ExpiredJwtException(e.getHeader(), e.getClaims(), e.getMessage());
         } catch (UnsupportedJwtException | MalformedJwtException | SignatureException e) {
             log.info("JWT_:PROV:ERR_:::위변조가 발생한 토큰입니다. msg({})", e.getMessage());
             throw new JwtException(e.getMessage());
@@ -108,11 +182,36 @@ public class JwtProvider {
         return getClaims(token).get("role", String.class);
     }
 
-    public String getMemberName(String token) {return getClaims(token).get("memberName", String.class);}
+    public String getMemberName(String token) {return getClaims(token).get("memberName", String.class);}    
 
     public boolean getIsSignUpCompleted(String token) {
         String isSignUpCompleted = getClaims(token).get("isSignUpCompleted", String.class);
         return isSignUpCompleted != null && Boolean.parseBoolean(isSignUpCompleted);
+    }
+
+    // scope 클레임 조회용 공개 메서드
+    public String getScope(String token) {
+        try {
+            return getClaims(token).get("scope", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // 소셜 가입 통합용 임시 토큰 보조 클레임들
+    public String getProvider(String token) {
+        try { return getClaims(token).get("provider", String.class); } catch (Exception e) { return null; }
+    }
+    public String getProviderUserId(String token) {
+        try { return getClaims(token).get("providerUserId", String.class); } catch (Exception e) { return null; }
+    }
+
+    public String getSessionId(String token) {
+        try { return getClaims(token).get("sid", String.class); } catch (Exception e) { return null; }
+    }
+
+    public String getFamilyId(String token) {
+        try { return getClaims(token).get("familyId", String.class); } catch (Exception e) { return null; }
     }
 
     private Claims getClaims(String token) {

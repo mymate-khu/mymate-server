@@ -1,5 +1,7 @@
 package com.mymate.mymate.auth.enums;
 
-public enum OauthProvider {
+public enum AuthProvider {
     KAKAO, GOOGLE, NAVER, LOCAL
 }
+
+
