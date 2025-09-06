@@ -1,0 +1,26 @@
+# 프로덕션 환경 전용 설정
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}  # 도커 컨테이너명으로 기본 설정
+      password: ${REDIS_PASSWORD:}
+
+# 프로덕션 환경 로깅 설정
+logging:
+  level:
+    com.mymate: INFO
+    org.springframework.security: WARN
+    org.springframework.data.redis: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+jwt:
+  secret: "your-super-secret-key-that-should-be-long-and-secure-for-development"
+  expirationMs: 7200000 # 2시간 (밀리초)
+  refreshTokenExpirationMs: 2592000000 # 30일 (밀리초)
+  tokenPrefix: "Bearer "
+  issuer: "tourapi"
+  audiences:
+    - "web"
+    - "mobile"
