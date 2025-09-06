@@ -1,12 +1,25 @@
 package com.mymate.mymate.member;
 
-import com.mymate.mymate.auth.enums.OauthProvider;
+import java.time.LocalDateTime;
+
+import com.mymate.mymate.auth.enums.AuthProvider;
 import com.mymate.mymate.common.entity.BaseEntity;
 import com.mymate.mymate.member.enums.Role;
-import jakarta.persistence.*;
-import lombok.*;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(
@@ -29,7 +42,7 @@ public class Member extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OauthProvider provider;
+    private AuthProvider provider;
 
     @Column(nullable = false, length = 191)
     private String providerUserId;
@@ -39,6 +52,10 @@ public class Member extends BaseEntity {
 
     // 로컬 로그인용 (겸용)
     @Column(length = 40, unique = true)
+    private String userId;
+
+    // 표시용 이름(닉네임)
+    @Column(length = 60)
     private String username;
 
     @Column(length = 100)

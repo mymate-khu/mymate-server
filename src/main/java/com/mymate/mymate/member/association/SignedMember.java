@@ -22,7 +22,7 @@ public class SignedMember {
     private final Boolean isSignUpCompleted;
 
     public static SignedMember of(Member member, Boolean isNewMember) {
-        return new SignedMember(member.getId(), member.getEmail(), member.getNickname(),
+        return new SignedMember(member.getId(), member.getEmail(), member.getUsername(),
                 member.getRole(), isNewMember, member.isSignUpCompleted());
     }
 }

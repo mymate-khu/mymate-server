@@ -1,7 +1,9 @@
 package com.mymate.mymate.auth.token;
 
+import com.mymate.mymate.auth.jwt.JwtProvider;
 import com.mymate.mymate.common.exception.general.GeneralException;
 import com.mymate.mymate.common.exception.token.status.TokenErrorStatus;
+import com.mymate.mymate.member.enums.Role;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -17,14 +19,17 @@ public class SynchronizedRedisStore implements RefreshTokenStore {
     private final RedisTemplate<String, String> redisTemplate;
     private final TokenHasher tokenHasher;
     private final long ttlSeconds;
+    private final JwtProvider jwtProvider;
     private final Object lock = new Object();
 
     public SynchronizedRedisStore(RedisTemplate<String, String> redisTemplate,
                                   TokenHasher tokenHasher,
-                                  long ttlSeconds) {
+                                  long ttlSeconds,
+                                  JwtProvider jwtProvider) {
         this.redisTemplate = redisTemplate;
         this.tokenHasher = tokenHasher;
         this.ttlSeconds = ttlSeconds;
+        this.jwtProvider = jwtProvider;
     }
 
     @Override
@@ -109,6 +114,45 @@ public class SynchronizedRedisStore implements RefreshTokenStore {
             redisTemplate.expire(sessionKey, java.time.Duration.ofSeconds(ttlSeconds));
 
             return new RotateResult(newRaw, newHash, uid, sid, familyId);
+        }
+    }
+
+    @Override
+    public RotateResult rotateWithJwt(String oldRefreshRaw, String uid, String sid, String familyId, 
+                                     Long id, String email, String name, Role role, boolean isSignUpCompleted) {
+        synchronized (lock) {
+            String oldHash = tokenHasher.hmacSha256Hex(oldRefreshRaw);
+            String indexKey = rtIndex(oldHash);
+            HashOperations<String, Object, Object> h = redisTemplate.opsForHash();
+            Boolean exists = redisTemplate.hasKey(indexKey);
+            if (exists == null || !exists) {
+                throw new GeneralException(TokenErrorStatus.INVALID_REFRESH_TOKEN);
+            }
+            String storedUid = (String) h.get(indexKey, "uid");
+            String storedSid = (String) h.get(indexKey, "sid");
+            String storedFamily = (String) h.get(indexKey, "familyId");
+            if (!Objects.equals(uid, storedUid) || !Objects.equals(sid, storedSid) || !Objects.equals(familyId, storedFamily)) {
+                throw new GeneralException(TokenErrorStatus.INVALID_CONTEXT);
+            }
+
+            // 새로운 JWT 리프레시 토큰 생성
+            String newJwtToken = jwtProvider.createRefreshToken(id, email, name, role, isSignUpCompleted, sid, familyId);
+            String newHash = tokenHasher.hmacSha256Hex(newJwtToken);
+            String newIndexKey = rtIndex(newHash);
+            String sessionKey = rtSession(uid, sid);
+
+            // delete old index
+            redisTemplate.delete(indexKey);
+
+            // create new index
+            h.put(newIndexKey, "rotated", "0");
+            redisTemplate.expire(newIndexKey, java.time.Duration.ofSeconds(ttlSeconds));
+
+            // update session
+            h.put(sessionKey, "tokenHash", newHash);
+            redisTemplate.expire(sessionKey, java.time.Duration.ofSeconds(ttlSeconds));
+
+            return new RotateResult(newJwtToken, newHash, uid, sid, familyId);
         }
     }
 

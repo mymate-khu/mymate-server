@@ -24,3 +24,8 @@ spring:
 jwt:
   secret: your-super-secret-key-that-should-be-long-and-secure
 
+solapi:
+  api-key: ${SOLAPI_API_KEY:}
+  api-secret: ${SOLAPI_API_SECRET:}
+  default-from: ${SOLAPI_DEFAULT_FROM:}
+
