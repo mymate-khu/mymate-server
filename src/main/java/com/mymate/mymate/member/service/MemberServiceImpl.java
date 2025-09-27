@@ -3,6 +3,7 @@ package com.mymate.mymate.member.service;
 import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.association.MemberProfile;
+import com.mymate.mymate.member.dto.MemberSearchResponse;
 import com.mymate.mymate.member.dto.ProfileSummaryResponse;
 import com.mymate.mymate.member.dto.ProfileUpdateRequest;
 import com.mymate.mymate.member.repository.MemberProfileRepository;
@@ -10,6 +11,9 @@ import com.mymate.mymate.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -75,5 +79,14 @@ import java.util.Objects;
                 .bio(profile.getBio())
                 .signUpCompleted(member.isSignUpCompleted())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberSearchResponse> searchMembers(String query) {
+        List<Member> members = memberRepository.findByUsernameOrNameContainingIgnoreCase(query);
+        return members.stream()
+                .map(MemberSearchResponse::new)
+                .collect(Collectors.toList());
     }
 }

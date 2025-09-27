@@ -21,12 +21,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.mymate.mymate.member.dto.MemberSearchResponse;
 import com.mymate.mymate.member.dto.ProfileSummaryResponse;
 import com.mymate.mymate.member.dto.ProfileUpdateRequest;
 import com.mymate.mymate.member.service.MemberService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -51,6 +54,15 @@ public class MemberController {
             @RequestBody @Validated ProfileUpdateRequest request
     ) {
         ProfileSummaryResponse response = memberService.updateMyProfile(principal.getId(), request);
+        return ApiResponse.onSuccess(MemberSuccessStatus.MEMBER_INFO_FETCHED, response);
+    }
+
+    @Operation(summary = "멤버 검색", description = "사용자명 또는 이름으로 회원을 검색합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<MemberSearchResponse>>> searchMembers(
+            @RequestParam String q
+    ) {
+        List<MemberSearchResponse> response = memberService.searchMembers(q);
         return ApiResponse.onSuccess(MemberSuccessStatus.MEMBER_INFO_FETCHED, response);
     }
 }
