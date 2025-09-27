@@ -3,11 +3,13 @@ package com.mymate.mymate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import jakarta.annotation.PostConstruct;
 
 @Slf4j
 @SpringBootApplication
+@EnableJpaAuditing
 public class MymateApplication {
 
 	@PostConstruct

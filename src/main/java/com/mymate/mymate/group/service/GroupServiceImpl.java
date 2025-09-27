@@ -2,6 +2,7 @@ package com.mymate.mymate.group.service;
 
 import com.mymate.mymate.group.dto.GroupCreateRequest;
 import com.mymate.mymate.group.dto.GroupResponse;
+import com.mymate.mymate.group.dto.GroupUpdateNameRequest;
 import com.mymate.mymate.group.entity.Group;
 import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
@@ -163,5 +164,35 @@ public class GroupServiceImpl implements GroupService {
         groupMemberRepository.save(newMember);
         log.info("그룹 멤버 추가 완료: groupId={}, memberId={}, requesterId={}", 
                 groupId, memberId, requesterId);
+    }
+
+    @Override
+    @Transactional
+    public GroupResponse updateGroupName(Long groupId, GroupUpdateNameRequest request, Long requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new GroupHandler(GroupErrorStatus.GROUP_NOT_FOUND));
+
+        // 소유자만 그룹 이름 변경 가능
+        if (!group.getOwnerId().equals(requesterId)) {
+            throw new GroupHandler(GroupErrorStatus.FORBIDDEN);
+        }
+
+        // 그룹 이름 업데이트
+        group.updateName(request.getName());
+        Group savedGroup = groupRepository.save(group);
+
+        // 그룹의 모든 멤버 조회
+        List<GroupMember> allMembers = groupMemberRepository.findByGroupId(groupId);
+        List<GroupResponse.MemberResponse> memberResponses = allMembers.stream()
+                .map(member -> new GroupResponse.MemberResponse(
+                        member.getId(), 
+                        member.getMemberId(), 
+                        member.getJoinedAt()))
+                .collect(Collectors.toList());
+
+        log.info("그룹 이름 변경 완료: groupId={}, newName={}, requesterId={}", 
+                groupId, request.getName(), requesterId);
+
+        return new GroupResponse(savedGroup, memberResponses);
     }
 }

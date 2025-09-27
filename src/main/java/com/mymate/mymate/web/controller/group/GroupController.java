@@ -2,6 +2,7 @@ package com.mymate.mymate.web.controller.group;
 
 import com.mymate.mymate.group.dto.GroupCreateRequest;
 import com.mymate.mymate.group.dto.GroupResponse;
+import com.mymate.mymate.group.dto.GroupUpdateNameRequest;
 import com.mymate.mymate.group.service.GroupService;
 import com.mymate.mymate.common.exception.ApiResponse;
 import com.mymate.mymate.common.exception.group.status.GroupSuccessStatus;
@@ -35,7 +36,7 @@ public class GroupController {
     @PostMapping
     @Operation(
         summary = "그룹 생성", 
-        description = "새로운 그룹을 생성합니다. 사용자가 새로운 그룹을 만들고 그룹장이 될 때 사용합니다.",
+        description = "새로운 그룹을 생성합니다. 기본적으로 회원가입 시 자동으로 그룹이 생성되지만, 그룹을 탈퇴한 후 다시 새로운 그룹을 만들고 싶을 때 사용하는 API입니다.",
         tags = {"Group"}
     )
     @ApiErrorCodeExamples({
@@ -141,5 +142,28 @@ public class GroupController {
         
         groupService.removeMember(groupId, memberId, userPrincipal.getId());
         return ApiResponse.onSuccess(GroupSuccessStatus.GROUP_MEMBER_REMOVED);
+    }
+
+    @PutMapping("/{groupId}/name")
+    @Operation(
+        summary = "그룹 이름 변경", 
+        description = "그룹의 이름을 변경합니다. 그룹장만 그룹 이름을 변경할 수 있습니다.",
+        tags = {"Group"}
+    )
+    @ApiErrorCodeExamples({
+        @ApiErrorCodeExample(
+            value = GroupErrorStatus.class,
+            codes = {"GROUP_NOT_FOUND", "FORBIDDEN"}
+        )
+    })
+    public ResponseEntity<GroupResponse> updateGroupName(
+            @Parameter(description = "그룹 ID", required = true)
+            @PathVariable Long groupId,
+            @Valid @RequestBody GroupUpdateNameRequest request,
+            @Parameter(description = "인증된 사용자 ID", hidden = true)
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        GroupResponse response = groupService.updateGroupName(groupId, request, userPrincipal.getId());
+        return ResponseEntity.ok(response);
     }
 }
