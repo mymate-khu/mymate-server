@@ -42,11 +42,20 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException(MemberErrorStatus.MEMBER_NOT_FOUND.getMessage()));
 
+// at the top of the file
+import com.mymate.mymate.member.repository.MemberRepository;
+import java.util.Objects;
+
         MemberProfile profile = memberProfileRepository.findByMemberId(member.getId())
                 .orElseGet(() -> MemberProfile.builder().memberId(member.getId()).build());
 
         if (request.getNickname() != null) {
-            profile.setNickname(request.getNickname());
+            String newNickname = request.getNickname();
+            if (!Objects.equals(profile.getNickname(), newNickname)
+                    && memberProfileRepository.existsByNickname(newNickname)) {
+                throw new IllegalArgumentException("Nickname already in use");
+            }
+            profile.setNickname(newNickname);
         }
         if (request.getProfileImageUrl() != null) {
             profile.setProfileImageUrl(request.getProfileImageUrl());
