@@ -11,11 +11,8 @@ import com.mymate.mymate.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.mymate.mymate.member.repository.MemberRepository;
-import java.util.Objects;
-
-
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
