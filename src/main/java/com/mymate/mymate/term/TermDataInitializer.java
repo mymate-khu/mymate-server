@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.mymate.mymate.term.entity.Term;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Profile("dev")
 @Component
+@Order(1) // 먼저 실행
 @RequiredArgsConstructor
 public class TermDataInitializer implements CommandLineRunner {
 

@@ -1,13 +1,15 @@
 services:
   redis:
     image: redis:7.0
+    ports:
+      - '6379:6379'
     networks:
       - mymate-network
 
   app:
-    image: ${DOCKERHUB_USERNAME}/mymate:latest
+    build: .
     env_file:
-      - .env
+      - .env.dev
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379

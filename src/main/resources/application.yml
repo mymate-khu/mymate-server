@@ -17,6 +17,22 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+
+# 로그 설정
+logging:
+  level:
+    root: INFO
+    com.mymate: INFO
+    org.springframework.data.redis: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    org.springframework.security: WARN
+    org.springframework.boot.autoconfigure: WARN
 
 
 

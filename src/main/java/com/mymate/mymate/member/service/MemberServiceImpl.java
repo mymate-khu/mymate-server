@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.association.MemberProfile;
+import com.mymate.mymate.member.dto.MemberSearchResponse;
 import com.mymate.mymate.member.dto.ProfileSummaryResponse;
 import com.mymate.mymate.member.dto.ProfileUpdateRequest;
 import com.mymate.mymate.member.repository.MemberProfileRepository;
@@ -75,5 +76,14 @@ public class MemberServiceImpl implements MemberService {
                 .bio(profile.getBio())
                 .signUpCompleted(member.isSignUpCompleted())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberSearchResponse> searchMembers(String query) {
+        List<Member> members = memberRepository.findByUsernameOrNameContainingIgnoreCase(query);
+        return members.stream()
+                .map(MemberSearchResponse::new)
+                .collect(Collectors.toList());
     }
 }
