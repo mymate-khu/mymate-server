@@ -1,11 +1,11 @@
 oauth:
   google:
-    client-id: ${GOOGLE_CLIENT_ID}
-    playground-client-id: ${GOOGLE_PLAYGROUND_CLIENT_ID}
+    client-id: ${GOOGLE_CLIENT_ID:temp-google-client-id}
+    playground-client-id: ${GOOGLE_PLAYGROUND_CLIENT_ID:temp-playground-client-id}
     
   kakao:
-    client-id: ${KAKAO_REST_API_KEY}
+    client-id: ${KAKAO_REST_API_KEY:temp-kakao-key}
     
   naver:
-    client-id: ${NAVER_CLIENT_ID}
-    client-secret: ${NAVER_CLIENT_SECRET}
+    client-id: ${NAVER_CLIENT_ID:temp-naver-client-id}
+    client-secret: ${NAVER_CLIENT_SECRET:temp-naver-secret}

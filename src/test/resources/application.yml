@@ -43,6 +43,11 @@ token:
     ttl-seconds: 1209600
   hmac-secret: "test-hmac-secret"
 
+solapi:
+  api-key: "test-api-key"
+  api-secret: "test-api-secret"
+  default-from: "test-from"
+
 logging:
   level:
     com.mymate.mymate: DEBUG

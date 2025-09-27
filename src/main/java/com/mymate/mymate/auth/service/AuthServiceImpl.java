@@ -22,6 +22,8 @@ import com.mymate.mymate.member.enums.Role;
 import com.mymate.mymate.member.repository.MemberRepository;
 import com.mymate.mymate.term.dto.AgreementRequest;
 import com.mymate.mymate.term.service.AgreementService;
+import com.mymate.mymate.group.service.GroupService;
+import com.mymate.mymate.group.dto.GroupCreateRequest;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -33,8 +35,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AgreementService agreementService;
     private final PhoneVerificationService phoneVerificationService;
+    private final GroupService groupService;
 
-    public AuthServiceImpl(JwtProvider jwtProvider, RefreshTokenStore refreshTokenStore, SocialTokenVerifier socialTokenVerifier, MemberRepository memberRepository, PasswordEncoder passwordEncoder, AgreementService agreementService, PhoneVerificationService phoneVerificationService) {
+    public AuthServiceImpl(JwtProvider jwtProvider, RefreshTokenStore refreshTokenStore, SocialTokenVerifier socialTokenVerifier, MemberRepository memberRepository, PasswordEncoder passwordEncoder, AgreementService agreementService, PhoneVerificationService phoneVerificationService, GroupService groupService) {
         this.jwtProvider = jwtProvider;
         this.refreshTokenStore = refreshTokenStore;
         this.socialTokenVerifier = socialTokenVerifier;
@@ -42,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
         this.agreementService = agreementService;
         this.phoneVerificationService = phoneVerificationService;
+        this.groupService = groupService;
     }
 
     @Override
@@ -183,6 +187,10 @@ public class AuthServiceImpl implements AuthService {
                 .verifyLatestVersion(true)
                 .build();
         agreementService.agree(member.getId(), agreementRequest);
+
+        // 기본 그룹 생성
+        GroupCreateRequest groupCreateRequest = new GroupCreateRequest("우리집");
+        groupService.createGroup(groupCreateRequest, member.getId());
 
         // 최종 토큰 발급
         TokenPair tokens = issueTokensOnLogin(member.getId(), member.getEmail(), member.getUsername(), Role.USER, true);
