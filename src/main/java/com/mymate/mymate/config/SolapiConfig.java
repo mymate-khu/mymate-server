@@ -1,5 +1,6 @@
 package com.mymate.mymate.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +11,7 @@ import com.solapi.sdk.message.service.DefaultMessageService;
 
 @Configuration
 @EnableConfigurationProperties(SolapiProperties.class)
+@ConditionalOnProperty(prefix = "solapi", name = "api-key")
 public class SolapiConfig {
 
     @Bean
