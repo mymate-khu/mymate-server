@@ -1,5 +1,12 @@
 package com.mymate.mymate.member.service;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.association.MemberProfile;
@@ -8,12 +15,8 @@ import com.mymate.mymate.member.dto.ProfileSummaryResponse;
 import com.mymate.mymate.member.dto.ProfileUpdateRequest;
 import com.mymate.mymate.member.repository.MemberProfileRepository;
 import com.mymate.mymate.member.repository.MemberRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
