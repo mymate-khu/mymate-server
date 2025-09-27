@@ -1,10 +1,10 @@
-package com.mymate.mymate.group.controller;
+package com.mymate.mymate.web.controller.group;
 
 import com.mymate.mymate.group.dto.GroupCreateRequest;
 import com.mymate.mymate.group.dto.GroupResponse;
 import com.mymate.mymate.group.service.GroupService;
-import com.mymate.mymate.common.exception.general.status.SuccessResponse;
-import com.mymate.mymate.common.exception.general.status.SuccessStatus;
+import com.mymate.mymate.common.exception.ApiResponse;
+import com.mymate.mymate.common.exception.group.status.GroupSuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -46,33 +46,33 @@ public class GroupController {
 
     @PostMapping("/{groupId}/leave")
     @Operation(summary = "그룹 탈퇴", description = "현재 사용자가 그룹에서 탈퇴합니다.")
-    public ResponseEntity<SuccessResponse> leaveGroup(
+    public ResponseEntity<ApiResponse<Void>> leaveGroup(
             @PathVariable Long groupId,
             @AuthenticationPrincipal Long memberId) {
         
         groupService.leaveGroup(groupId, memberId);
-        return ResponseEntity.ok(SuccessResponse.of(SuccessStatus.OK, "그룹에서 탈퇴했습니다."));
+        return ApiResponse.onSuccess(GroupSuccessStatus.GROUP_LEFT);
     }
 
     @PostMapping("/{groupId}/members")
     @Operation(summary = "그룹 멤버 직접 추가", description = "그룹에 멤버를 직접 추가합니다.")
-    public ResponseEntity<SuccessResponse> addMember(
+    public ResponseEntity<ApiResponse<Void>> addMember(
             @PathVariable Long groupId,
             @RequestParam Long memberId,
             @AuthenticationPrincipal Long requesterId) {
         
         groupService.addMember(groupId, memberId, requesterId);
-        return ResponseEntity.ok(SuccessResponse.of(SuccessStatus.OK, "그룹에 멤버를 추가했습니다."));
+        return ApiResponse.onSuccess(GroupSuccessStatus.GROUP_MEMBER_ADDED);
     }
 
     @DeleteMapping("/{groupId}/members/{memberId}")
     @Operation(summary = "그룹 멤버 제거", description = "그룹에서 멤버를 제거합니다.")
-    public ResponseEntity<SuccessResponse> removeMember(
+    public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable Long groupId,
             @PathVariable Long memberId,
             @AuthenticationPrincipal Long requesterId) {
         
         groupService.removeMember(groupId, memberId, requesterId);
-        return ResponseEntity.ok(SuccessResponse.of(SuccessStatus.OK, "그룹에서 멤버를 제거했습니다."));
+        return ApiResponse.onSuccess(GroupSuccessStatus.GROUP_MEMBER_REMOVED);
     }
 }

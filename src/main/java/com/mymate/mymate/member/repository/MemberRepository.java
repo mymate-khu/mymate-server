@@ -19,7 +19,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findFirstByUserId(String userId);
     Optional<Member> findByProviderAndProviderUserId(AuthProvider provider, String providerUserId);
     
-    @Query("SELECT m FROM Member m WHERE (m.username LIKE %:query% OR m.name LIKE %:query%) AND m.signUpCompleted = true")
+    @Query("SELECT m FROM Member m WHERE m.username LIKE %:query% AND m.isSignUpCompleted = true")
     List<Member> findByUsernameOrNameContainingIgnoreCase(@Param("query") String query);
 }
 

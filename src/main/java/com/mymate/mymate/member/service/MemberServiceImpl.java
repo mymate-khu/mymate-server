@@ -11,6 +11,9 @@ import com.mymate.mymate.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mymate.mymate.member.repository.MemberRepository;
+import java.util.Objects;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,10 +48,6 @@ public class MemberServiceImpl implements MemberService {
     public ProfileSummaryResponse updateMyProfile(Long memberId, ProfileUpdateRequest request) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException(MemberErrorStatus.MEMBER_NOT_FOUND.getMessage()));
-
-// at the top of the file
-import com.mymate.mymate.member.repository.MemberRepository;
-import java.util.Objects;
 
         MemberProfile profile = memberProfileRepository.findByMemberId(member.getId())
                 .orElseGet(() -> MemberProfile.builder().memberId(member.getId()).build());

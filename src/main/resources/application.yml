@@ -18,6 +18,17 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+# 로그 설정
+logging:
+  level:
+    root: INFO
+    com.mymate: INFO
+    org.springframework.data.redis: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    org.springframework.security: WARN
+    org.springframework.boot.autoconfigure: WARN
+
 
 
 # 공통 설정이 있다면 여기에

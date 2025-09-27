@@ -11,7 +11,7 @@ import com.mymate.mymate.member.repository.MemberRepository;
 import com.mymate.mymate.common.exception.general.GeneralException;
 import com.mymate.mymate.common.exception.general.status.ErrorStatus;
 import com.mymate.mymate.group.status.GroupErrorStatus;
-import com.mymate.mymate.member.status.MemberErrorStatus;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

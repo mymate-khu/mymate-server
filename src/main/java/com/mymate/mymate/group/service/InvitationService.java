@@ -13,7 +13,7 @@ import com.mymate.mymate.member.repository.MemberRepository;
 import com.mymate.mymate.common.exception.general.GeneralException;
 import com.mymate.mymate.common.exception.general.status.ErrorStatus;
 import com.mymate.mymate.group.status.GroupErrorStatus;
-import com.mymate.mymate.member.status.MemberErrorStatus;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -80,7 +80,7 @@ public class InvitationService {
         log.info("초대 생성 완료: invitationId={}, groupId={}, inviterId={}, inviteeId={}", 
                 savedInvitation.getId(), groupId, inviterId, request.getInviteeId());
 
-        return new InvitationResponse(savedInvitation, group.getName(), inviter.getName());
+        return new InvitationResponse(savedInvitation, group.getName(), inviter.getUsername());
     }
 
     public List<InvitationResponse> getMyInvitations(Long memberId) {
@@ -94,7 +94,7 @@ public class InvitationService {
                     Member inviter = memberRepository.findById(invitation.getInviterId())
                             .orElseThrow(() -> new GeneralException(MemberErrorStatus.MEMBER_NOT_FOUND));
                     
-                    return new InvitationResponse(invitation, group.getName(), inviter.getName());
+                    return new InvitationResponse(invitation, group.getName(), inviter.getUsername());
                 })
                 .collect(Collectors.toList());
     }

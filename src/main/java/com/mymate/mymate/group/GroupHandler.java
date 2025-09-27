@@ -10,12 +10,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GroupHandler extends ExceptionAdvice {
 
-    @Override
     protected void logException(Exception exception, ErrorStatus errorStatus) {
         log.error("Group 도메인 예외 발생: {}", exception.getMessage(), exception);
     }
 
-    @Override
     protected void logException(Exception exception, GroupErrorStatus errorStatus) {
         log.error("Group 도메인 예외 발생: {}", exception.getMessage(), exception);
     }

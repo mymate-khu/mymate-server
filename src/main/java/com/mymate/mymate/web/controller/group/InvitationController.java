@@ -1,10 +1,10 @@
-package com.mymate.mymate.group.controller;
+package com.mymate.mymate.web.controller.group;
 
 import com.mymate.mymate.group.dto.InvitationCreateRequest;
 import com.mymate.mymate.group.dto.InvitationResponse;
 import com.mymate.mymate.group.service.InvitationService;
-import com.mymate.mymate.common.exception.general.status.SuccessResponse;
-import com.mymate.mymate.common.exception.general.status.SuccessStatus;
+import com.mymate.mymate.common.exception.ApiResponse;
+import com.mymate.mymate.common.exception.group.status.GroupSuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -47,21 +47,21 @@ public class InvitationController {
 
     @PostMapping("/{invitationId}/accept")
     @Operation(summary = "초대 수락", description = "받은 초대를 수락합니다.")
-    public ResponseEntity<SuccessResponse> acceptInvitation(
+    public ResponseEntity<ApiResponse<Void>> acceptInvitation(
             @PathVariable Long invitationId,
             @AuthenticationPrincipal Long memberId) {
         
         invitationService.acceptInvitation(invitationId, memberId);
-        return ResponseEntity.ok(SuccessResponse.of(SuccessStatus.OK, "초대를 수락했습니다."));
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_ACCEPTED);
     }
 
     @PostMapping("/{invitationId}/cancel")
     @Operation(summary = "초대 취소", description = "초대를 취소합니다.")
-    public ResponseEntity<SuccessResponse> cancelInvitation(
+    public ResponseEntity<ApiResponse<Void>> cancelInvitation(
             @PathVariable Long invitationId,
             @AuthenticationPrincipal Long memberId) {
         
         invitationService.cancelInvitation(invitationId, memberId);
-        return ResponseEntity.ok(SuccessResponse.of(SuccessStatus.OK, "초대를 취소했습니다."));
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_CANCELLED);
     }
 }
