@@ -4,6 +4,7 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   h2:
     console:
       enabled: true
@@ -32,4 +33,13 @@ jwt:
   audiences:
     - "web"
     - "mobile"
+
+# 개발 환경에서 기본 관리자 계정
+seed:
+  admin:
+    enabled: true
+    email: "admin@local.dev"
+    userId: "admin"
+    username: "Admin"
+    password: "admin1234"
 
