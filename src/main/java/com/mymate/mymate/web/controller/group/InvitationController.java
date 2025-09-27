@@ -32,10 +32,10 @@ public class InvitationController {
 
     private final InvitationService invitationService;
 
-    @PostMapping("/groups/{groupId}/invitations")
+    @PostMapping("/invitations")
     @Operation(
         summary = "그룹 초대 생성", 
-        description = "특정 그룹에 사용자를 초대합니다. 그룹장이나 관리자가 다른 사용자를 그룹에 초대할 때 사용합니다.",
+        description = "현재 사용자의 그룹에 다른 사용자를 초대합니다. 사용자당 하나의 그룹만 가질 수 있으므로 그룹 ID는 필요하지 않습니다. 사용자 ID 또는 이메일로 초대할 수 있습니다.",
         tags = {"Invitation"}
     )
     @ApiErrorCodeExamples({
@@ -44,15 +44,13 @@ public class InvitationController {
             codes = {"GROUP_NOT_FOUND", "INVITATION_ALREADY_EXISTS", "FORBIDDEN", "MEMBER_ALREADY_IN_GROUP"}
         )
     })
-    public ResponseEntity<InvitationResponse> createInvitation(
-            @Parameter(description = "그룹 ID", required = true)
-            @PathVariable Long groupId,
+    public ResponseEntity<ApiResponse<InvitationResponse>> createInvitation(
             @Valid @RequestBody InvitationCreateRequest request,
             @Parameter(description = "초대자 ID", hidden = true)
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
-        InvitationResponse response = invitationService.createInvitation(request, groupId, userPrincipal.getId());
-        return ResponseEntity.ok(response);
+        InvitationResponse response = invitationService.createInvitation(request, userPrincipal.getId());
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_CREATED, response);
     }
 
     @GetMapping("/me")
@@ -67,12 +65,12 @@ public class InvitationController {
             codes = {"INVITATION_NOT_FOUND"}
         )
     })
-    public ResponseEntity<List<InvitationResponse>> getMyInvitations(
+    public ResponseEntity<ApiResponse<List<InvitationResponse>>> getMyInvitations(
             @Parameter(description = "인증된 사용자 ID", hidden = true)
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
         List<InvitationResponse> response = invitationService.getMyInvitations(userPrincipal.getId());
-        return ResponseEntity.ok(response);
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_LIST_FETCHED, response);
     }
 
     @PostMapping("/{invitationId}/accept")
