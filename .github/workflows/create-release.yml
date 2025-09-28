@@ -5,7 +5,13 @@ on:
     types: [closed]
     branches:
       - release
-    
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+  
 jobs:
   create_release:
     if: github.event.pull_request.merged == true && (contains(github.event.pull_request.labels.*.name, 'major') || contains(github.event.pull_request.labels.*.name, 'minor') || contains(github.event.pull_request.labels.*.name, 'patch'))
