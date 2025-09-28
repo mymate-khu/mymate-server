@@ -30,7 +30,6 @@ public class PuzzleResponse {
     private Long parentPuzzleId;
     private Priority priority;
     private String category;
-    private String color;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -48,7 +47,6 @@ public class PuzzleResponse {
                 .parentPuzzleId(puzzle.getParentPuzzleId())
                 .priority(puzzle.getPriority())
                 .category(puzzle.getCategory())
-                .color(puzzle.getColor())
                 .createdAt(puzzle.getCreatedAt())
                 .updatedAt(puzzle.getUpdatedAt())
                 .build();

@@ -59,13 +59,10 @@ public class Puzzle extends BaseEntity {
     @Column(length = 50)
     private String category;
 
-    @Column(length = 7)
-    private String color;
-
     @Builder
     public Puzzle(String title, String description, LocalDate scheduledDate, Long memberId,
                   RecurrenceType recurrenceType, LocalDate recurrenceEndDate, Long parentPuzzleId,
-                  Priority priority, String category, String color) {
+                  Priority priority, String category) {
         this.title = title;
         this.description = description;
         this.scheduledDate = scheduledDate;
@@ -75,7 +72,6 @@ public class Puzzle extends BaseEntity {
         this.parentPuzzleId = parentPuzzleId;
         this.priority = priority;
         this.category = category;
-        this.color = color;
     }
 
     public void updateTitle(String title) {
@@ -98,9 +94,6 @@ public class Puzzle extends BaseEntity {
         this.category = category;
     }
 
-    public void updateColor(String color) {
-        this.color = color;
-    }
 
     public void complete() {
         this.status = PuzzleStatus.DONE;

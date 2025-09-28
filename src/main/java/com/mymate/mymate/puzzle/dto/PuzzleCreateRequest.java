@@ -2,6 +2,7 @@ package com.mymate.mymate.puzzle.dto;
 
 import com.mymate.mymate.puzzle.enums.Priority;
 import com.mymate.mymate.puzzle.enums.RecurrenceType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,6 +17,17 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "퍼즐 생성 요청", example = """
+{
+  "title": "운동하기",
+  "description": "매일 30분 운동하기",
+  "scheduledDate": "2024-01-15",
+  "recurrenceType": "DAILY",
+  "recurrenceEndDate": "2024-01-31",
+  "priority": "HIGH",
+  "category": "건강"
+}
+""")
 public class PuzzleCreateRequest {
 
     @NotBlank(message = "제목은 필수입니다")
@@ -38,7 +50,4 @@ public class PuzzleCreateRequest {
 
     @Size(max = 50, message = "카테고리는 50자를 초과할 수 없습니다")
     private String category;
-
-    @Size(max = 7, message = "색상 코드는 7자를 초과할 수 없습니다")
-    private String color;
 }

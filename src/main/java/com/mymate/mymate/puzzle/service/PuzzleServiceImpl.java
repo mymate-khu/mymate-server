@@ -45,7 +45,6 @@ public class PuzzleServiceImpl implements PuzzleService {
                 .recurrenceEndDate(request.getRecurrenceEndDate())
                 .priority(request.getPriority())
                 .category(request.getCategory())
-                .color(request.getColor())
                 .build();
 
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
@@ -98,9 +97,6 @@ public class PuzzleServiceImpl implements PuzzleService {
         }
         if (request.getCategory() != null) {
             puzzle.updateCategory(request.getCategory());
-        }
-        if (request.getColor() != null) {
-            puzzle.updateColor(request.getColor());
         }
 
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
