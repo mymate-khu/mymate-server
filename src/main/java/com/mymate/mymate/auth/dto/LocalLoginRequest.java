@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "로컬 로그인 요청", example = """
 {
-  "userId": "user123",
-  "passwordEncrypted": "encrypted_password_string"
+  "userId": "user1",
+  "passwordEncrypted": "user1pass"
 }
 """)
 public class LocalLoginRequest {
