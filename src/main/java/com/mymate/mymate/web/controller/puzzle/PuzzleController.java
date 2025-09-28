@@ -89,6 +89,12 @@ public class PuzzleController {
             summary = "퍼즐 목록 조회",
             description = "사용자의 퍼즐 목록을 페이징하여 조회합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<PuzzleListResponse>> getPuzzles(
             @AuthenticationPrincipal UserPrincipal principal,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -170,6 +176,12 @@ public class PuzzleController {
             summary = "특정 날짜 퍼즐 조회",
             description = "특정 날짜의 퍼즐 목록을 조회합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<List<PuzzleResponse>>> getPuzzlesByDate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -184,6 +196,12 @@ public class PuzzleController {
             summary = "날짜 범위 퍼즐 조회",
             description = "날짜 범위의 퍼즐 목록을 조회합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<List<PuzzleResponse>>> getPuzzlesByDateRange(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -199,6 +217,12 @@ public class PuzzleController {
             summary = "상태별 퍼즐 조회",
             description = "진행 상태별로 퍼즐 목록을 조회합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<PuzzleListResponse>> getPuzzlesByStatus(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable PuzzleStatus status,
@@ -214,6 +238,12 @@ public class PuzzleController {
             summary = "카테고리별 퍼즐 조회",
             description = "카테고리별로 퍼즐 목록을 조회합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<PuzzleListResponse>> getPuzzlesByCategory(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String category,
@@ -229,6 +259,12 @@ public class PuzzleController {
             summary = "퍼즐 검색",
             description = "제목과 설명에서 텍스트를 검색합니다."
     )
+    @ApiErrorCodeExamples({
+            @ApiErrorCodeExample(
+                    value = PuzzleErrorStatus.class,
+                    codes = {"FORBIDDEN"}
+            )
+    })
     public ResponseEntity<ApiResponse<PuzzleListResponse>> searchPuzzles(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam String q,
