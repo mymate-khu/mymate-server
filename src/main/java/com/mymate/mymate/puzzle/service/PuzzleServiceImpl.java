@@ -1,6 +1,6 @@
 package com.mymate.mymate.puzzle.service;
 
-import com.mymate.mymate.common.exception.GeneralException;
+import com.mymate.mymate.common.exception.general.GeneralException;
 import com.mymate.mymate.puzzle.dto.PuzzleCreateRequest;
 import com.mymate.mymate.puzzle.dto.PuzzleListResponse;
 import com.mymate.mymate.puzzle.dto.PuzzleResponse;
@@ -10,7 +10,7 @@ import com.mymate.mymate.puzzle.entity.Puzzle;
 import com.mymate.mymate.puzzle.enums.PuzzleStatus;
 import com.mymate.mymate.puzzle.repository.PuzzleRepository;
 import com.mymate.mymate.puzzle.repository.PuzzleRepositoryCustom;
-import com.mymate.mymate.puzzle.status.PuzzleErrorStatus;
+import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

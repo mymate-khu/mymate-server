@@ -1,4 +1,4 @@
-package com.mymate.mymate.puzzle.web.controller;
+package com.mymate.mymate.web.controller.puzzle;
 
 import com.mymate.mymate.auth.jwt.UserPrincipal;
 import com.mymate.mymate.common.exception.ApiErrorCodeExample;
@@ -11,10 +11,9 @@ import com.mymate.mymate.puzzle.dto.PuzzleStatusUpdateRequest;
 import com.mymate.mymate.puzzle.dto.PuzzleUpdateRequest;
 import com.mymate.mymate.puzzle.enums.PuzzleStatus;
 import com.mymate.mymate.puzzle.service.PuzzleService;
-import com.mymate.mymate.puzzle.status.PuzzleErrorStatus;
-import com.mymate.mymate.puzzle.status.PuzzleSuccessStatus;
+import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
+import com.mymate.mymate.common.exception.puzzle.status.PuzzleSuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

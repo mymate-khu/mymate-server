@@ -2,7 +2,7 @@
 FROM gradle:8.6-jdk17 AS build
 WORKDIR /app
 COPY . .
-RUN gradle build -x test --no-daemon
+RUN gradle clean build -x test --no-daemon
 
 # 2. 실행 이미지
 FROM openjdk:17-jdk-slim

@@ -1,8 +1,8 @@
-package com.mymate.mymate.puzzle;
+package com.mymate.mymate.common.exception.puzzle;
 
 import com.mymate.mymate.common.exception.ExceptionAdvice;
 import com.mymate.mymate.common.exception.general.status.ErrorStatus;
-import com.mymate.mymate.puzzle.status.PuzzleErrorStatus;
+import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 

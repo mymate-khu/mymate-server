@@ -37,7 +37,6 @@ public class Puzzle extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
     private PuzzleStatus status = PuzzleStatus.INPROGRESS;
 
     @Column(nullable = false)
@@ -45,7 +44,6 @@ public class Puzzle extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
     private RecurrenceType recurrenceType = RecurrenceType.NONE;
 
     @Column
@@ -56,7 +54,6 @@ public class Puzzle extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
     private Priority priority = Priority.MEDIUM;
 
     @Column(length = 50)

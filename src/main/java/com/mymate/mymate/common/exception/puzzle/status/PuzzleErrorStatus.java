@@ -1,4 +1,4 @@
-package com.mymate.mymate.puzzle.status;
+package com.mymate.mymate.common.exception.puzzle.status;
 
 import com.mymate.mymate.common.exception.ExplainError;
 import com.mymate.mymate.common.exception.general.status.ErrorResponse;
