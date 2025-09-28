@@ -20,5 +20,6 @@ import lombok.NoArgsConstructor;
 public class PuzzleStatusUpdateRequest {
 
     @NotNull(message = "상태는 필수입니다")
+    @Schema(description = "퍼즐 상태", example = "DONE")
     private PuzzleStatus status;
 }

@@ -26,15 +26,20 @@ import java.time.LocalDate;
 public class PuzzleUpdateRequest {
 
     @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다")
+    @Schema(description = "제목", example = "운동하기 (수정)")
     private String title;
 
     @Size(max = 1000, message = "설명은 1000자를 초과할 수 없습니다")
+    @Schema(description = "설명", example = "매일 1시간 운동하기")
     private String description;
 
+    @Schema(description = "예정일", example = "2024-01-16")
     private LocalDate scheduledDate;
 
+    @Schema(description = "우선순위", example = "MEDIUM")
     private Priority priority;
 
     @Size(max = 50, message = "카테고리는 50자를 초과할 수 없습니다")
+    @Schema(description = "카테고리", example = "건강관리")
     private String category;
 }

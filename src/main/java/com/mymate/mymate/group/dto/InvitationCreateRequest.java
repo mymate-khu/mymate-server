@@ -7,7 +7,11 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@Schema(description = "그룹 초대 생성 요청")
+@Schema(description = "그룹 초대 생성 요청", example = """
+{
+  "inviteeIdentifier": "SZZYDE770"
+}
+""")
 public class InvitationCreateRequest {
 
     @NotBlank(message = "초대받을 사용자 식별자는 필수입니다")
