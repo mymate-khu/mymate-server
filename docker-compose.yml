@@ -9,7 +9,7 @@ services:
   app:
     build: .
     env_file:
-      - .env.dev
+      - .env.prod
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -19,6 +19,8 @@ services:
       - redis
     networks:
       - mymate-network
+    volumes:
+      - ./firebase-admin.json:/app/firebase-admin.json:ro
 
 networks:
   mymate-network:

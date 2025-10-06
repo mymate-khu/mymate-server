@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mymate.mymate.auth.jwt.UserPrincipal;
+import com.mymate.mymate.common.exception.ApiErrorCodeExample;
 import com.mymate.mymate.common.exception.ApiResponse;
+import com.mymate.mymate.common.exception.notification.status.NotificationErrorStatus;
 import com.mymate.mymate.common.exception.notification.status.NotificationSuccessStatus;
 import com.mymate.mymate.notification.dto.NotificationClickRequest;
 import com.mymate.mymate.notification.dto.NotificationListResponse;
@@ -34,6 +36,7 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "내 알림 목록 조회")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = { "INTERNAL_SERVER_ERROR" })
     public ResponseEntity<ApiResponse<NotificationListResponse>> getNotifications(
             @AuthenticationPrincipal UserPrincipal principal) {
         NotificationListResponse body = notificationService.getNotifications(principal.getId());
@@ -42,6 +45,7 @@ public class NotificationController {
 
     @GetMapping("/unread-count")
     @Operation(summary = "읽지 않은 알림 개수 조회")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = { "INTERNAL_SERVER_ERROR" })
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
             @AuthenticationPrincipal UserPrincipal principal) {
         long count = notificationService.getUnreadCount(principal.getId());
@@ -50,6 +54,9 @@ public class NotificationController {
 
     @GetMapping("/{notificationId}")
     @Operation(summary = "알림 상세 조회")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = {
+            "INVALID_NOTIFICATION_ID", "NOTIFICATION_NOT_FOUND", "NOTIFICATION_ACCESS_DENIED"
+    })
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotification(
             @PathVariable("notificationId") Long notificationId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -59,6 +66,9 @@ public class NotificationController {
 
     @PutMapping("/{notificationId}/read")
     @Operation(summary = "알림 읽음 처리")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = {
+            "INVALID_NOTIFICATION_ID", "NOTIFICATION_NOT_FOUND", "NOTIFICATION_ACCESS_DENIED"
+    })
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable("notificationId") Long notificationId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -68,6 +78,7 @@ public class NotificationController {
 
     @PutMapping("/mark-all-read")
     @Operation(summary = "모든 알림 읽음 처리")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = { "INTERNAL_SERVER_ERROR" })
     public ResponseEntity<ApiResponse<Integer>> markAllAsRead(
             @AuthenticationPrincipal UserPrincipal principal) {
         int processed = notificationService.markAllAsRead(principal.getId());
@@ -76,6 +87,9 @@ public class NotificationController {
 
     @PostMapping("/{notificationId}/navigate")
     @Operation(summary = "알림 네비게이션 처리")
+    @ApiErrorCodeExample(value = NotificationErrorStatus.class, codes = {
+            "INVALID_NOTIFICATION_ID", "NOTIFICATION_NOT_FOUND", "NOTIFICATION_ACCESS_DENIED", "ALREADY_NAVIGATED"
+    })
     public ResponseEntity<ApiResponse<NotificationResponse>> navigate(
             @PathVariable("notificationId") Long notificationId,
             @RequestBody NotificationClickRequest request,
