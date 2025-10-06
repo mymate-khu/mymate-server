@@ -57,11 +57,22 @@ jobs:
           sudo chmod 600 /home/ubuntu/.env
 
       # 🔐 firebase-admin.json을 시크릿에서 복원 (원문 JSON 그대로, heredoc으로 안전하게)
+      - name: Remove firebase-admin.json directory if exists
+        run: sudo rm -rf /home/ubuntu/firebase-admin.json
+    
       - name: Write firebase-admin.json from secret
         run: | 
-          sudo mkdir -p /opt/mymate
-          printf '%s' "${{ secrets.FIREBASE_ADMIN_JSON }}" | sudo tee /opt/mymate/firebase-admin.json > /dev/null
-          sudo chmod 400 /opt/mymate/firebase-admin.json
+          set -e
+          sudo mkdir -p /home/ubuntu
+          # 시크릿 원문을 그대로 파일로 저장 (셸 확장/이스케이프 방지)
+          cat > /home/ubuntu/firebase-admin.json <<'JSON'
+          ${{ secrets.FIREBASE_ADMIN_JSON }} JSON
+          # CRLF가 포함됐다면 LF로 변환
+          if command -v dos2unix >/dev/null 2>&1; then sudo dos2unix /home/ubuntu/firebase-admin.json; fi
+          # JSON 유효성 검사 (jq 없으면 설치 시도)
+          if ! command -v jq >/dev/null 2>&1; then sudo apt-get update -y && sudo apt-get install -y jq; fi
+          sudo jq -e . /home/ubuntu/firebase-admin.json >/dev/null
+          sudo chmod 400 /home/ubuntu/firebase-admin.json
 
       - name: Compose down
         working-directory: /home/ubuntu
