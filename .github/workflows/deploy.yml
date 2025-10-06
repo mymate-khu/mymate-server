@@ -60,9 +60,7 @@ jobs:
       - name: Write firebase-admin.json from secret
         run: |
           sudo mkdir -p /opt/mymate
-          cat > /tmp/firebase-admin.json <<'JSON'
-${{ secrets.FIREBASE_ADMIN_JSON }}
-JSON
+          cat > /tmp/firebase-admin.json <<'JSON' ${{ secrets.FIREBASE_ADMIN_JSON }}JSON
           sudo mv /tmp/firebase-admin.json /opt/mymate/firebase-admin.json
           sudo chmod 400 /opt/mymate/firebase-admin.json
 
