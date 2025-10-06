@@ -6,14 +6,14 @@ import lombok.*;
 
 @Entity
 @Table(
-        name = "fcm_token",
+        name = "expo_token",
         uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "token", "device_type"})
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class FcmToken extends BaseEntity {
+public class ExpoToken extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,5 +43,3 @@ public class FcmToken extends BaseEntity {
         this.isActive = false;
     }
 }
-
-
