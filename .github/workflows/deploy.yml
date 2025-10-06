@@ -57,6 +57,9 @@ jobs:
           sudo chmod 600 /home/ubuntu/.env
 
       # 🔐 firebase-admin.json을 시크릿에서 복원 (원문 JSON 그대로, heredoc으로 안전하게)
+      - name: Remove firebase-admin.json directory if exists
+        run: sudo rm -rf /home/ubuntu/firebase-admin.json
+    
       - name: Write firebase-admin.json from secret
         run: | 
           sudo mkdir -p /home/ubuntu
