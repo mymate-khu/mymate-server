@@ -9,10 +9,11 @@ services:
   app:
     build: .
     env_file:
-      - .env.prod
+      - .env.dev
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - FCM_SERVICE_ACCOUNT_KEY_PATH=/app/firebase-admin.json
     ports:
       - '8080:8080'  # API는 외부에 열어야 하니까 이건 OK
     depends_on:
