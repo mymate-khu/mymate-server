@@ -66,8 +66,7 @@ jobs:
           sudo mkdir -p /home/ubuntu
           # 시크릿 원문을 그대로 파일로 저장 (셸 확장/이스케이프 방지)
           cat > /home/ubuntu/firebase-admin.json <<'JSON'
-${{ secrets.FIREBASE_ADMIN_JSON }}
-JSON
+          ${{ secrets.FIREBASE_ADMIN_JSON }} JSON
           # CRLF가 포함됐다면 LF로 변환
           if command -v dos2unix >/dev/null 2>&1; then sudo dos2unix /home/ubuntu/firebase-admin.json; fi
           # JSON 유효성 검사 (jq 없으면 설치 시도)
