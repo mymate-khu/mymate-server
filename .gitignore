@@ -43,3 +43,5 @@ out/
 
 docs/
 docker-compose.yml
+
+firebase-admin.json
