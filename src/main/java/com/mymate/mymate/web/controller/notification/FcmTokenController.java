@@ -1,8 +1,8 @@
 package com.mymate.mymate.web.controller.notification;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,6 +34,7 @@ public class FcmTokenController {
     @PostMapping("/token")
     @Operation(summary = "FCM 토큰 등록", description = "사용자의 FCM 토큰을 등록(업서트)합니다.")
     public ResponseEntity<ApiResponse<FcmTokenResponse>> registerToken(
+            @Valid
             @RequestBody
             @Parameter(description = "등록할 FCM 토큰과 디바이스 타입", required = true) FcmTokenRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {

@@ -12,6 +12,8 @@ public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
 
     Optional<FcmToken> findByMemberIdAndToken(Long memberId, String token);
 
+    Optional<FcmToken> findByMemberIdAndTokenAndDeviceType(Long memberId, String token, String deviceType);
+
     List<FcmToken> findByMemberIdAndIsActiveTrue(Long memberId);
 
     @Query("SELECT ft FROM FcmToken ft WHERE ft.memberId = :memberId AND ft.isActive = true")

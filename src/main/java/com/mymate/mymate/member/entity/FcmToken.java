@@ -5,10 +5,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "fcm_token")
+@Table(
+        name = "fcm_token",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "token", "device_type"})
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class FcmToken extends BaseEntity {
 
