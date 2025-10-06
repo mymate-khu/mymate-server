@@ -58,6 +58,11 @@ dependencies {
 
 	//전화번호 인증
 	implementation 'com.solapi:sdk:1.0.3'
+
+	// FCM (Firebase Admin SDK) 및 인증 라이브러리
+	implementation 'com.google.firebase:firebase-admin:9.2.0'
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 tasks.named('test') {
 	useJUnitPlatform()

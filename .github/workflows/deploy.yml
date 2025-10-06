@@ -27,7 +27,7 @@ jobs:
       - name: Build with Gradle Wrapper
         run: |
           chmod +x gradlew
-          ./gradlew build -x test
+          ./gradlew clean build -x test
 
       - name: Sign in to Docker Hub
         uses: docker/login-action@v3
@@ -55,6 +55,16 @@ jobs:
           sudo mkdir -p /home/ubuntu
           printf '%s' "${{ secrets.ENV_PROD }}" | sudo tee /home/ubuntu/.env > /dev/null
           sudo chmod 600 /home/ubuntu/.env
+
+      # 🔐 firebase-admin.json을 시크릿에서 복원 (원문 JSON 그대로, heredoc으로 안전하게)
+      - name: Write firebase-admin.json from secret
+        run: |
+          sudo mkdir -p /opt/mymate
+          cat > /tmp/firebase-admin.json <<'JSON'
+${{ secrets.FIREBASE_ADMIN_JSON }}
+JSON
+          sudo mv /tmp/firebase-admin.json /opt/mymate/firebase-admin.json
+          sudo chmod 400 /opt/mymate/firebase-admin.json
 
       - name: Compose down
         working-directory: /home/ubuntu
