@@ -45,3 +45,6 @@ docs/
 docker-compose.yml
 
 firebase-admin.json
+firebase-debug.log
+
+.idea/

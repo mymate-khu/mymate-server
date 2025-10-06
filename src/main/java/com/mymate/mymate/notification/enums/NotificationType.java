@@ -1,0 +1,40 @@
+package com.mymate.mymate.notification.enums;
+
+public enum NotificationType {
+    // 퍼즐/일정 관련
+    PUZZLE_CREATED,
+    PUZZLE_DUE_SOON,
+    PUZZLE_OVERDUE,
+    PUZZLE_COMPLETED,
+    SCHEDULE_ADDED,
+
+    // 그룹/메이트 관련
+    GROUP_INVITATION_RECEIVED,
+    GROUP_INVITATION_ACCEPTED,
+    GROUP_MEMBER_JOINED,
+    GROUP_MEMBER_LEFT,
+    GROUP_OWNER_CHANGED,
+    MATE_REQUEST_RECEIVED,
+    MATE_REQUEST_ACCEPTED,
+
+    // 정산 관련
+    SETTLEMENT_CREATED,
+    SETTLEMENT_UPDATED,
+    SETTLEMENT_COMPLETED,
+
+    // 댓글/소통 관련
+    COMMENT_ADDED,
+    COMMENT_REPLY,
+
+    // 시스템 관련
+    SYSTEM_MAINTENANCE,
+    SYSTEM_UPDATE,
+    ACCOUNT_SECURITY,
+
+    // 기타
+    WELCOME,
+    REMINDER,
+    CUSTOM
+}
+
+
