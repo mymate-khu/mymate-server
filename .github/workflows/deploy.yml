@@ -59,9 +59,9 @@ jobs:
       # 🔐 firebase-admin.json을 시크릿에서 복원 (원문 JSON 그대로, heredoc으로 안전하게)
       - name: Write firebase-admin.json from secret
         run: | 
-          sudo mkdir -p /opt/mymate
-          printf '%s' "${{ secrets.FIREBASE_ADMIN_JSON }}" | sudo tee /opt/mymate/firebase-admin.json > /dev/null
-          sudo chmod 400 /opt/mymate/firebase-admin.json
+          sudo mkdir -p /home/ubuntu
+          printf '%s' "${{ secrets.FIREBASE_ADMIN_JSON }}" | sudo tee /home/ubuntu/firebase-admin.json > /dev/null
+          sudo chmod 400 /home/ubuntu/firebase-admin.json
 
       - name: Compose down
         working-directory: /home/ubuntu
