@@ -26,7 +26,7 @@ public class NotificationComposerServiceImpl implements NotificationComposerServ
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationTemplateService templateService;
-    private final FcmService fcmService;
+    private final PushService pushService;
 
     @Override
     @Transactional
@@ -51,26 +51,25 @@ public class NotificationComposerServiceImpl implements NotificationComposerServ
             log.debug("NOTI:COMPOSE:template-applied title='{}' nav='{}'", title, navigationUrl);
         }
 
-        Notification notification = Notification.builder()
-                .recipient(recipient)
-                .sender(sender)
-                .type(type)
-                .title(title)
-                .content(content)
-                .priority(priority != null ? priority : Priority.MEDIUM)
-                .status(NotificationStatus.UNREAD)
-                .navigationUrl(navigationUrl)
-                .expiresAt(LocalDateTime.now().plusDays(30))
-                .build();
+        Notification notification = new Notification();
+        notification.setRecipient(recipient);
+        notification.setSender(sender);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setPriority(priority != null ? priority : Priority.MEDIUM);
+        notification.setStatus(NotificationStatus.UNREAD);
+        notification.setNavigationUrl(navigationUrl);
+        notification.setExpiresAt(LocalDateTime.now().plusDays(30));
 
         Notification saved = notificationRepository.save(notification);
-        log.info("NOTI:SAVE:notification id={} recipient={} type={}", saved.getId(), recipientId, type);
+        log.info("NOTI:SAVE:notification recipient={} type={}", recipientId, type);
 
-        var fcmResp = fcmService.sendToUser(recipientId, title, content, data);
-        if (fcmResp.isSuccess()) {
-            log.info("FCM:SEND:ok id={} msgId={} succ={} fail={}", saved.getId(), fcmResp.getMessageId(), fcmResp.getSuccessCount(), fcmResp.getFailureCount());
+        var sendResp = pushService.sendToUser(recipientId, title, content, data);
+        if (sendResp.isSuccess()) {
+            log.info("PUSH:SEND:ok succ={} fail={}", sendResp.getSuccessCount(), sendResp.getFailureCount());
         } else {
-            log.warn("FCM:SEND:fail id={} err={}", saved.getId(), fcmResp.getErrorMessage());
+            log.warn("PUSH:SEND:fail err={}", sendResp.getErrorMessage());
         }
 
         return saved;

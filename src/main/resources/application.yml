@@ -45,10 +45,7 @@ solapi:
   api-secret: ${SOLAPI_API_SECRET:}
   default-from: ${SOLAPI_DEFAULT_FROM:}
 
-# FCM 설정 (서비스 계정 키 경로 및 기본 주제/타임아웃 등)
-fcm:
-  project-id: ${FCM_PROJECT_ID:}
-  service-account-key-path: ${FCM_SERVICE_ACCOUNT_KEY_PATH:}
+
 
 # 관리자 계정 시드 설정 (프로필별로 오버라이드 가능)
 seed:

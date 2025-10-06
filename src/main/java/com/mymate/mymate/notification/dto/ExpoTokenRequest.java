@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public class FcmTokenRequest {
-    @Schema(description = "FCM 등록 토큰", example = "fcm_token_string")
+public class ExpoTokenRequest {
+    @Schema(description = "Expo Push 토큰", example = "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")
     @NotBlank
     private String token;
 
