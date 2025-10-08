@@ -28,8 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -161,22 +163,7 @@ public class AccountServiceImpl implements AccountService {
 
         // 참여자 목록이 변경되었다면 업데이트
         if (request.getParticipantIds() != null) {
-            // 기존 참여자 삭제
-            participantRepository.deleteByAccountId(accountId);
-
-            // 새로운 참여자 추가
-            BigDecimal paymentAmountPerPerson = account.getReceiveAmount()
-                    .divide(BigDecimal.valueOf(request.getParticipantIds().size()), 2, RoundingMode.HALF_UP);
-
-            List<AccountParticipant> newParticipants = request.getParticipantIds().stream()
-                    .map(participantId -> AccountParticipant.builder()
-                            .accountId(accountId)
-                            .memberId(participantId)
-                            .paymentAmount(paymentAmountPerPerson)
-                            .build())
-                    .collect(Collectors.toList());
-
-            participantRepository.saveAll(newParticipants);
+            updateParticipants(accountId, request.getParticipantIds(), account.getReceiveAmount());
         }
 
         Account savedAccount = accountRepository.save(account);
@@ -363,6 +350,63 @@ public class AccountServiceImpl implements AccountService {
 
         // 그룹의 카테고리 목록 조회
         return accountRepository.findDistinctCategoriesByGroupId(groupId);
+    }
+
+    /**
+     * 참여자를 안전하게 업데이트하는 헬퍼 메서드
+     */
+    private void updateParticipants(Long accountId, List<Long> newParticipantIds, BigDecimal receiveAmount) {
+        // 기존 참여자 조회
+        List<AccountParticipant> existingParticipants = participantRepository.findByAccountId(accountId);
+        
+        // 기존 참여자 ID 목록
+        Set<Long> existingParticipantIds = existingParticipants.stream()
+                .map(AccountParticipant::getMemberId)
+                .collect(Collectors.toSet());
+        
+        // 새 참여자 ID 목록
+        Set<Long> newParticipantIdSet = new HashSet<>(newParticipantIds);
+        
+        // 삭제할 참여자들 (기존에 있지만 새 목록에 없는)
+        Set<Long> toDeleteIds = existingParticipantIds.stream()
+                .filter(id -> !newParticipantIdSet.contains(id))
+                .collect(Collectors.toSet());
+        
+        // 추가할 참여자들 (새 목록에 있지만 기존에 없는)
+        Set<Long> toAddIds = newParticipantIdSet.stream()
+                .filter(id -> !existingParticipantIds.contains(id))
+                .collect(Collectors.toSet());
+        
+        // 삭제할 참여자들 제거
+        if (!toDeleteIds.isEmpty()) {
+            participantRepository.deleteByAccountIdAndMemberIdIn(accountId, toDeleteIds);
+        }
+        
+        // 추가할 참여자들 추가
+        if (!toAddIds.isEmpty()) {
+            BigDecimal paymentAmountPerPerson = receiveAmount
+                    .divide(BigDecimal.valueOf(newParticipantIds.size()), 2, RoundingMode.HALF_UP);
+            
+            List<AccountParticipant> newParticipants = toAddIds.stream()
+                    .map(participantId -> AccountParticipant.builder()
+                            .accountId(accountId)
+                            .memberId(participantId)
+                            .paymentAmount(paymentAmountPerPerson)
+                            .build())
+                    .collect(Collectors.toList());
+            
+            participantRepository.saveAll(newParticipants);
+        }
+        
+        // 기존 참여자들의 지불 금액 업데이트 (참여자 수가 변경되었을 수 있음)
+        if (!existingParticipants.isEmpty() && !toDeleteIds.isEmpty() && !toAddIds.isEmpty()) {
+            BigDecimal updatedPaymentAmountPerPerson = receiveAmount
+                    .divide(BigDecimal.valueOf(newParticipantIds.size()), 2, RoundingMode.HALF_UP);
+            
+            existingParticipants.stream()
+                    .filter(p -> !toDeleteIds.contains(p.getMemberId()))
+                    .forEach(p -> p.updatePaymentAmount(updatedPaymentAmountPerPerson));
+        }
     }
 
     /**

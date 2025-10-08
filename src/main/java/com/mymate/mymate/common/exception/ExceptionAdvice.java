@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice(
         annotations = { RestController.class },
-        basePackages = { "com.tourapi.tourapi.web.controller" }
+        basePackages = { "com.mymate.mymate.web.controller" }
 )
 public class ExceptionAdvice {
 
