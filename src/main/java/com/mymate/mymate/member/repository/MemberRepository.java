@@ -21,6 +21,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     
     @Query("SELECT m FROM Member m WHERE (m.username LIKE %:query% OR m.email LIKE %:query% OR m.userId LIKE %:query%) AND m.isSignUpCompleted = true")
     List<Member> findByUsernameOrNameContainingIgnoreCase(@Param("query") String query);
+    
+    @Query("SELECT m FROM Member m WHERE m.isSignUpCompleted = true ORDER BY m.createdAt DESC")
+    List<Member> findAllCompletedMembers();
 }
 
 
