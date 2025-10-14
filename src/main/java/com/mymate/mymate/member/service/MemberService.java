@@ -10,4 +10,5 @@ public interface MemberService {
     ProfileSummaryResponse getMyProfile(Long memberId);
     ProfileSummaryResponse updateMyProfile(Long memberId, ProfileUpdateRequest request);
     List<MemberSearchResponse> searchMembers(String query);
+    List<MemberSearchResponse> getAllCompletedMembers();
 }

@@ -53,6 +53,13 @@ public class MemberController {
         List<MemberSearchResponse> response = memberService.searchMembers(q);
         return ApiResponse.onSuccess(MemberSuccessStatus.MEMBER_INFO_FETCHED, response);
     }
+
+    @Operation(summary = "가입 완료된 모든 회원 조회", description = "회원가입이 완료된 모든 회원 목록을 조회합니다.")
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<MemberSearchResponse>>> getAllCompletedMembers() {
+        List<MemberSearchResponse> response = memberService.getAllCompletedMembers();
+        return ApiResponse.onSuccess(MemberSuccessStatus.MEMBER_INFO_FETCHED, response);
+    }
 }
 
 
