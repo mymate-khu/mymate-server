@@ -88,4 +88,13 @@ public class MemberServiceImpl implements MemberService {
                 .map(MemberSearchResponse::new)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberSearchResponse> getAllCompletedMembers() {
+        List<Member> members = memberRepository.findAllCompletedMembers();
+        return members.stream()
+                .map(MemberSearchResponse::new)
+                .collect(Collectors.toList());
+    }
 }
