@@ -42,6 +42,9 @@ public class Puzzle extends BaseEntity {
     @Column(nullable = false)
     private Long memberId;
 
+    @Column
+    private Long groupId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RecurrenceType recurrenceType = RecurrenceType.NONE;
@@ -61,12 +64,14 @@ public class Puzzle extends BaseEntity {
 
     @Builder
     public Puzzle(String title, String description, LocalDate scheduledDate, Long memberId,
+                  Long groupId,
                   RecurrenceType recurrenceType, LocalDate recurrenceEndDate, Long parentPuzzleId,
                   Priority priority, String category) {
         this.title = title;
         this.description = description;
         this.scheduledDate = scheduledDate;
         this.memberId = memberId;
+        this.groupId = groupId;
         this.recurrenceType = recurrenceType;
         this.recurrenceEndDate = recurrenceEndDate;
         this.parentPuzzleId = parentPuzzleId;

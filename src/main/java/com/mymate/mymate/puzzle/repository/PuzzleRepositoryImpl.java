@@ -1,10 +1,11 @@
 package com.mymate.mymate.puzzle.repository;
 
 import com.mymate.mymate.puzzle.entity.Puzzle;
+import com.mymate.mymate.puzzle.enums.Priority;
 import com.mymate.mymate.puzzle.enums.PuzzleStatus;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import com.mymate.mymate.puzzle.enums.RecurrenceType;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -13,177 +14,216 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.mymate.mymate.puzzle.entity.QPuzzle.puzzle;
+
 @Repository
 public class PuzzleRepositoryImpl implements PuzzleRepositoryCustom {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final JPAQueryFactory queryFactory;
+
+    public PuzzleRepositoryImpl(JPAQueryFactory queryFactory) {
+        this.queryFactory = queryFactory;
+    }
 
     @Override
     public Page<Puzzle> findByConditions(Long memberId, PuzzleStatus status, String category,
                                         LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        StringBuilder jpql = new StringBuilder("SELECT p FROM Puzzle p WHERE p.memberId = :memberId");
-        
+        BooleanBuilder where = new BooleanBuilder()
+                .and(puzzle.memberId.eq(memberId));
+
         if (status != null) {
-            jpql.append(" AND p.status = :status");
+            where.and(puzzle.status.eq(status));
         }
         if (category != null && !category.trim().isEmpty()) {
-            jpql.append(" AND p.category = :category");
+            where.and(puzzle.category.eq(category));
         }
         if (startDate != null) {
-            jpql.append(" AND p.scheduledDate >= :startDate");
+            where.and(puzzle.scheduledDate.goe(startDate));
         }
         if (endDate != null) {
-            jpql.append(" AND p.scheduledDate <= :endDate");
+            where.and(puzzle.scheduledDate.loe(endDate));
         }
-        
-        jpql.append(" ORDER BY p.scheduledDate DESC, p.createdAt DESC");
 
-        TypedQuery<Puzzle> query = entityManager.createQuery(jpql.toString(), Puzzle.class);
-        query.setParameter("memberId", memberId);
-        
+        List<Puzzle> content = queryFactory
+                .selectFrom(puzzle)
+                .where(where)
+                .orderBy(puzzle.scheduledDate.desc(), puzzle.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(where)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+    }
+
+    @Override
+    public Page<Puzzle> findByConditionsForGroupMembers(List<Long> memberIds, PuzzleStatus status, String category,
+                                                        LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder()
+                .and(puzzle.memberId.in(memberIds));
+
         if (status != null) {
-            query.setParameter("status", status);
+            where.and(puzzle.status.eq(status));
         }
         if (category != null && !category.trim().isEmpty()) {
-            query.setParameter("category", category);
+            where.and(puzzle.category.eq(category));
         }
         if (startDate != null) {
-            query.setParameter("startDate", startDate);
+            where.and(puzzle.scheduledDate.goe(startDate));
         }
         if (endDate != null) {
-            query.setParameter("endDate", endDate);
+            where.and(puzzle.scheduledDate.loe(endDate));
         }
 
-        // 페이징 적용
-        query.setFirstResult((int) pageable.getOffset());
-        query.setMaxResults(pageable.getPageSize());
+        List<Puzzle> content = queryFactory
+                .selectFrom(puzzle)
+                .where(where)
+                .orderBy(puzzle.scheduledDate.desc(), puzzle.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
 
-        List<Puzzle> puzzles = query.getResultList();
-        
-        // 전체 개수 조회
-        String countJpql = jpql.toString().replace("SELECT p FROM", "SELECT COUNT(p) FROM");
-        TypedQuery<Long> countQuery = entityManager.createQuery(countJpql, Long.class);
-        countQuery.setParameter("memberId", memberId);
-        
-        if (status != null) {
-            countQuery.setParameter("status", status);
-        }
-        if (category != null && !category.trim().isEmpty()) {
-            countQuery.setParameter("category", category);
-        }
-        if (startDate != null) {
-            countQuery.setParameter("startDate", startDate);
-        }
-        if (endDate != null) {
-            countQuery.setParameter("endDate", endDate);
-        }
+        Long total = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(where)
+                .fetchOne();
 
-        long total = countQuery.getSingleResult();
-        
-        return new PageImpl<>(puzzles, pageable, total);
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
     }
 
     @Override
     public Page<Puzzle> searchByText(Long memberId, String searchText, Pageable pageable) {
-        String jpql = "SELECT p FROM Puzzle p WHERE p.memberId = :memberId " +
-                     "AND (LOWER(p.title) LIKE LOWER(:searchText) OR LOWER(p.description) LIKE LOWER(:searchText)) " +
-                     "ORDER BY p.scheduledDate DESC, p.createdAt DESC";
-        
-        TypedQuery<Puzzle> query = entityManager.createQuery(jpql, Puzzle.class);
-        query.setParameter("memberId", memberId);
-        query.setParameter("searchText", "%" + searchText + "%");
-        
-        query.setFirstResult((int) pageable.getOffset());
-        query.setMaxResults(pageable.getPageSize());
-        
-        List<Puzzle> puzzles = query.getResultList();
-        
-        // 전체 개수 조회
-        String countJpql = "SELECT COUNT(p) FROM Puzzle p WHERE p.memberId = :memberId " +
-                          "AND (LOWER(p.title) LIKE LOWER(:searchText) OR LOWER(p.description) LIKE LOWER(:searchText))";
-        
-        TypedQuery<Long> countQuery = entityManager.createQuery(countJpql, Long.class);
-        countQuery.setParameter("memberId", memberId);
-        countQuery.setParameter("searchText", "%" + searchText + "%");
-        
-        long total = countQuery.getSingleResult();
-        
-        return new PageImpl<>(puzzles, pageable, total);
+        BooleanBuilder where = new BooleanBuilder()
+                .and(puzzle.memberId.eq(memberId));
+
+        if (searchText != null && !searchText.isBlank()) {
+            String like = "%" + searchText.toLowerCase() + "%";
+            where.and(puzzle.title.lower().like(like)
+                    .or(puzzle.description.lower().like(like)));
+        }
+
+        List<Puzzle> content = queryFactory
+                .selectFrom(puzzle)
+                .where(where)
+                .orderBy(puzzle.scheduledDate.desc(), puzzle.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(where)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+    }
+
+    @Override
+    public Page<Puzzle> searchByTextForGroupMembers(List<Long> memberIds, String searchText, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder()
+                .and(puzzle.memberId.in(memberIds));
+
+        if (searchText != null && !searchText.isBlank()) {
+            String like = "%" + searchText.toLowerCase() + "%";
+            where.and(puzzle.title.lower().like(like)
+                    .or(puzzle.description.lower().like(like)));
+        }
+
+        List<Puzzle> content = queryFactory
+                .selectFrom(puzzle)
+                .where(where)
+                .orderBy(puzzle.scheduledDate.desc(), puzzle.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(where)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
     }
 
     @Override
     public Page<Puzzle> findByPriority(Long memberId, String priority, Pageable pageable) {
-        String jpql = "SELECT p FROM Puzzle p WHERE p.memberId = :memberId AND p.priority = :priority " +
-                     "ORDER BY p.scheduledDate DESC, p.createdAt DESC";
-        
-        TypedQuery<Puzzle> query = entityManager.createQuery(jpql, Puzzle.class);
-        query.setParameter("memberId", memberId);
-        query.setParameter("priority", priority);
-        
-        query.setFirstResult((int) pageable.getOffset());
-        query.setMaxResults(pageable.getPageSize());
-        
-        List<Puzzle> puzzles = query.getResultList();
-        
-        // 전체 개수 조회
-        String countJpql = "SELECT COUNT(p) FROM Puzzle p WHERE p.memberId = :memberId AND p.priority = :priority";
-        
-        TypedQuery<Long> countQuery = entityManager.createQuery(countJpql, Long.class);
-        countQuery.setParameter("memberId", memberId);
-        countQuery.setParameter("priority", priority);
-        
-        long total = countQuery.getSingleResult();
-        
-        return new PageImpl<>(puzzles, pageable, total);
+        BooleanBuilder where = new BooleanBuilder()
+                .and(puzzle.memberId.eq(memberId));
+
+        if (priority != null && !priority.isBlank()) {
+            try {
+                where.and(puzzle.priority.eq(Priority.valueOf(priority)));
+            } catch (IllegalArgumentException ignored) {
+                where.and(puzzle.id.isNull());
+            }
+        }
+
+        List<Puzzle> content = queryFactory
+                .selectFrom(puzzle)
+                .where(where)
+                .orderBy(puzzle.scheduledDate.desc(), puzzle.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(where)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
     }
 
     @Override
     public List<Puzzle> findPuzzlesToGenerateRecurrence(LocalDate targetDate) {
-        String jpql = "SELECT p FROM Puzzle p WHERE p.recurrenceType != 'NONE' " +
-                     "AND p.recurrenceEndDate >= :targetDate " +
-                     "AND p.parentPuzzleId IS NULL";
-        
-        TypedQuery<Puzzle> query = entityManager.createQuery(jpql, Puzzle.class);
-        query.setParameter("targetDate", targetDate);
-        
-        return query.getResultList();
+        return queryFactory
+                .selectFrom(puzzle)
+                .where(puzzle.recurrenceType.ne(RecurrenceType.NONE)
+                        .and(puzzle.recurrenceEndDate.goe(targetDate))
+                        .and(puzzle.parentPuzzleId.isNull()))
+                .fetch();
     }
 
     @Override
     public long countByMemberIdAndStatus(Long memberId, PuzzleStatus status) {
-        String jpql = "SELECT COUNT(p) FROM Puzzle p WHERE p.memberId = :memberId AND p.status = :status";
-        
-        TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
-        query.setParameter("memberId", memberId);
-        query.setParameter("status", status);
-        
-        return query.getSingleResult();
+        Long count = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(puzzle.memberId.eq(memberId)
+                        .and(puzzle.status.eq(status)))
+                .fetchOne();
+        return count == null ? 0 : count;
     }
 
     @Override
     public long countByMemberIdAndDateRange(Long memberId, LocalDate startDate, LocalDate endDate) {
-        String jpql = "SELECT COUNT(p) FROM Puzzle p WHERE p.memberId = :memberId " +
-                     "AND p.scheduledDate BETWEEN :startDate AND :endDate";
-        
-        TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
-        query.setParameter("memberId", memberId);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
-        
-        return query.getSingleResult();
+        Long count = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(puzzle.memberId.eq(memberId)
+                        .and(puzzle.scheduledDate.between(startDate, endDate)))
+                .fetchOne();
+        return count == null ? 0 : count;
     }
 
     @Override
     public long countCompletedByMemberIdAndDateRange(Long memberId, LocalDate startDate, LocalDate endDate) {
-        String jpql = "SELECT COUNT(p) FROM Puzzle p WHERE p.memberId = :memberId " +
-                     "AND p.scheduledDate BETWEEN :startDate AND :endDate AND p.status = 'DONE'";
-        
-        TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
-        query.setParameter("memberId", memberId);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
-        
-        return query.getSingleResult();
+        Long count = queryFactory
+                .select(puzzle.count())
+                .from(puzzle)
+                .where(puzzle.memberId.eq(memberId)
+                        .and(puzzle.scheduledDate.between(startDate, endDate))
+                        .and(puzzle.status.eq(PuzzleStatus.DONE)))
+                .fetchOne();
+        return count == null ? 0 : count;
     }
 }

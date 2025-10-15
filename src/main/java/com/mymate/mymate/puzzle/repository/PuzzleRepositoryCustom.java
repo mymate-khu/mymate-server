@@ -14,8 +14,15 @@ public interface PuzzleRepositoryCustom {
     Page<Puzzle> findByConditions(Long memberId, PuzzleStatus status, String category, 
                                  LocalDate startDate, LocalDate endDate, Pageable pageable);
 
+    // 멤버가 속한 그룹의 모든 멤버들의 복합 조건 검색
+    Page<Puzzle> findByConditionsForGroupMembers(List<Long> memberIds, PuzzleStatus status, String category, 
+                                                 LocalDate startDate, LocalDate endDate, Pageable pageable);
+
     // 텍스트 검색 (제목, 설명)
     Page<Puzzle> searchByText(Long memberId, String searchText, Pageable pageable);
+
+    // 멤버가 속한 그룹의 모든 멤버들의 텍스트 검색
+    Page<Puzzle> searchByTextForGroupMembers(List<Long> memberIds, String searchText, Pageable pageable);
 
     // 우선순위별 퍼즐 조회
     Page<Puzzle> findByPriority(Long memberId, String priority, Pageable pageable);

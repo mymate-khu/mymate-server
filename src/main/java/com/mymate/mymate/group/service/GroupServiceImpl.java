@@ -8,6 +8,7 @@ import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.repository.GroupRepository;
 import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.puzzle.repository.PuzzleRepository;
 import com.mymate.mymate.common.exception.group.GroupHandler;
 import com.mymate.mymate.group.status.GroupErrorStatus;
 import com.mymate.mymate.common.exception.member.MemberHandler;
@@ -29,6 +30,7 @@ public class GroupServiceImpl implements GroupService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
+    private final PuzzleRepository puzzleRepository;
 
     @Override
     @Transactional
@@ -98,6 +100,8 @@ public class GroupServiceImpl implements GroupService {
         if (group.getOwnerId().equals(memberId)) {
             List<GroupMember> remainingMembers = groupMemberRepository.findByGroupId(groupId);
             if (remainingMembers.size() == 1) {
+                // 퍼즐 먼저 일괄 삭제 후 그룹 삭제
+                puzzleRepository.deleteByGroupId(groupId);
                 groupRepository.delete(group);
                 log.info("그룹 삭제됨 (소유자 탈퇴): groupId={}", groupId);
                 return;
