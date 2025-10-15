@@ -22,6 +22,9 @@ public enum PuzzleErrorStatus implements ErrorResponse {
     @ExplainError("반복 종료일이 시작일보다 이전")
     INVALID_RECURRENCE_END_DATE(HttpStatus.BAD_REQUEST, "PUZZLE4005", "반복 종료일이 시작일보다 이전입니다."),
 
+    @ExplainError("사용자의 소속 그룹을 찾을 수 없음")
+    GROUP_NOT_FOUND(HttpStatus.BAD_REQUEST, "PUZZLE4006", "소속 그룹을 찾을 수 없습니다."),
+
     // 권한
     @ExplainError("퍼즐 접근 권한이 없음")
     FORBIDDEN(HttpStatus.FORBIDDEN, "PUZZLE4030", "퍼즐에 접근할 권한이 없습니다.");

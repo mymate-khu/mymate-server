@@ -1,20 +1,15 @@
 package com.mymate.mymate.common.exception.puzzle;
 
 import com.mymate.mymate.common.exception.ExceptionAdvice;
+import com.mymate.mymate.common.exception.general.GeneralException;
+import com.mymate.mymate.common.exception.general.status.ErrorResponse;
 import com.mymate.mymate.common.exception.general.status.ErrorStatus;
 import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@Slf4j
-@RestControllerAdvice
-public class PuzzleHandler extends ExceptionAdvice {
 
-    protected void logException(Exception exception, ErrorStatus errorStatus) {
-        log.error("Puzzle 도메인 예외 발생: {}", exception.getMessage(), exception);
-    }
+public class PuzzleHandler extends GeneralException {
 
-    protected void logException(Exception exception, PuzzleErrorStatus errorStatus) {
-        log.error("Puzzle 도메인 예외 발생: {}", exception.getMessage(), exception);
-    }
+public PuzzleHandler(ErrorResponse status) {super(status);}
 }
