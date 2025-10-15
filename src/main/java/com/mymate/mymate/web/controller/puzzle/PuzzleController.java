@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -39,6 +40,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/puzzles")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "퍼즐 관리", description = "퍼즐 CRUD 및 상태 관리")
 public class PuzzleController {
 
@@ -47,7 +49,7 @@ public class PuzzleController {
     @PostMapping
     @Operation(
             summary = "퍼즐 생성",
-            description = "새로운 퍼즐을 생성합니다."
+            description = "인증 사용자(멤버)의 소속 그룹 기준으로 퍼즐을 생성합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -60,6 +62,7 @@ public class PuzzleController {
             @Valid @RequestBody PuzzleCreateRequest request) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] create requested: memberId={}, title={}", memberId, request.getTitle());
         PuzzleResponse response = puzzleService.createPuzzle(memberId, request);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLE_CREATED, response);
     }
@@ -67,7 +70,7 @@ public class PuzzleController {
     @GetMapping("/{id}")
     @Operation(
             summary = "퍼즐 상세 조회",
-            description = "특정 퍼즐의 상세 정보를 조회합니다."
+            description = "인증 사용자 소속 그룹의 퍼즐인지 검증 후 상세 정보를 반환합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -80,6 +83,7 @@ public class PuzzleController {
             @PathVariable Long id) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] get requested: memberId={}, id={}", memberId, id);
         PuzzleResponse response = puzzleService.getPuzzle(memberId, id);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLE_FOUND, response);
     }
@@ -87,7 +91,7 @@ public class PuzzleController {
     @GetMapping
     @Operation(
             summary = "퍼즐 목록 조회",
-            description = "사용자의 퍼즐 목록을 페이징하여 조회합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 퍼즐 목록을 페이징 조회합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -100,6 +104,7 @@ public class PuzzleController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] list requested: memberId={}, pageable={}", memberId, pageable);
         PuzzleListResponse response = puzzleService.getPuzzles(memberId, pageable);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }
@@ -107,7 +112,7 @@ public class PuzzleController {
     @PutMapping("/{id}")
     @Operation(
             summary = "퍼즐 수정",
-            description = "퍼즐의 정보를 수정합니다."
+            description = "인증 사용자 소속 그룹의 퍼즐인지 검증 후 정보를 수정합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -121,6 +126,7 @@ public class PuzzleController {
             @Valid @RequestBody PuzzleUpdateRequest request) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] update requested: memberId={}, id={}", memberId, id);
         PuzzleResponse response = puzzleService.updatePuzzle(memberId, id, request);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLE_UPDATED, response);
     }
@@ -128,7 +134,7 @@ public class PuzzleController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "퍼즐 삭제",
-            description = "퍼즐을 삭제합니다."
+            description = "인증 사용자 소속 그룹의 퍼즐인지 검증 후 삭제합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -141,6 +147,7 @@ public class PuzzleController {
             @PathVariable Long id) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] delete requested: memberId={}, id={}", memberId, id);
         puzzleService.deletePuzzle(memberId, id);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLE_DELETED, null);
     }
@@ -148,7 +155,7 @@ public class PuzzleController {
     @PatchMapping("/{id}/status")
     @Operation(
             summary = "퍼즐 상태 변경",
-            description = "퍼즐의 진행 상태를 변경합니다."
+            description = "인증 사용자 소속 그룹의 퍼즐인지 검증 후 진행 상태를 변경합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -162,6 +169,7 @@ public class PuzzleController {
             @Valid @RequestBody PuzzleStatusUpdateRequest request) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] status update requested: memberId={}, id={}, status={}", memberId, id, request.getStatus());
         PuzzleResponse response = puzzleService.updatePuzzleStatus(memberId, id, request);
         
         PuzzleSuccessStatus successStatus = request.getStatus() == PuzzleStatus.DONE 
@@ -174,7 +182,7 @@ public class PuzzleController {
     @GetMapping("/date/{date}")
     @Operation(
             summary = "특정 날짜 퍼즐 조회",
-            description = "특정 날짜의 퍼즐 목록을 조회합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 특정 날짜의 퍼즐을 조회합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -187,6 +195,7 @@ public class PuzzleController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] list by date requested: memberId={}, date={}", memberId, date);
         List<PuzzleResponse> response = puzzleService.getPuzzlesByDate(memberId, date);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }
@@ -194,7 +203,7 @@ public class PuzzleController {
     @GetMapping("/date/range")
     @Operation(
             summary = "날짜 범위 퍼즐 조회",
-            description = "날짜 범위의 퍼즐 목록을 조회합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 날짜 범위의 퍼즐을 조회합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -208,6 +217,7 @@ public class PuzzleController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] list by range requested: memberId={}, startDate={}, endDate={}", memberId, startDate, endDate);
         List<PuzzleResponse> response = puzzleService.getPuzzlesByDateRange(memberId, startDate, endDate);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }
@@ -215,7 +225,7 @@ public class PuzzleController {
     @GetMapping("/status/{status}")
     @Operation(
             summary = "상태별 퍼즐 조회",
-            description = "진행 상태별로 퍼즐 목록을 조회합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 상태별 퍼즐을 조회합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -229,6 +239,7 @@ public class PuzzleController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] list by status requested: memberId={}, status={}, pageable={}", memberId, status, pageable);
         PuzzleListResponse response = puzzleService.getPuzzlesByStatus(memberId, status, pageable);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }
@@ -236,7 +247,7 @@ public class PuzzleController {
     @GetMapping("/category/{category}")
     @Operation(
             summary = "카테고리별 퍼즐 조회",
-            description = "카테고리별로 퍼즐 목록을 조회합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 카테고리별 퍼즐을 조회합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -250,6 +261,7 @@ public class PuzzleController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] list by category requested: memberId={}, category={}, pageable={}", memberId, category, pageable);
         PuzzleListResponse response = puzzleService.getPuzzlesByCategory(memberId, category, pageable);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }
@@ -257,7 +269,7 @@ public class PuzzleController {
     @GetMapping("/search")
     @Operation(
             summary = "퍼즐 검색",
-            description = "제목과 설명에서 텍스트를 검색합니다."
+            description = "인증 사용자가 속한 그룹 기준으로 제목/설명 텍스트를 검색합니다."
     )
     @ApiErrorCodeExamples({
             @ApiErrorCodeExample(
@@ -271,6 +283,7 @@ public class PuzzleController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         Long memberId = principal.getId();
+        log.info("[Puzzle] search requested: memberId={}, q={}, pageable={}", memberId, q, pageable);
         PuzzleListResponse response = puzzleService.searchPuzzles(memberId, q, pageable);
         return ApiResponse.onSuccess(PuzzleSuccessStatus.PUZZLES_FOUND, response);
     }

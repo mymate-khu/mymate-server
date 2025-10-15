@@ -1,6 +1,7 @@
 package com.mymate.mymate.puzzle.service;
 
 import com.mymate.mymate.common.exception.general.GeneralException;
+import com.mymate.mymate.common.exception.puzzle.PuzzleHandler;
 import com.mymate.mymate.puzzle.dto.PuzzleCreateRequest;
 import com.mymate.mymate.puzzle.dto.PuzzleListResponse;
 import com.mymate.mymate.puzzle.dto.PuzzleResponse;
@@ -10,6 +11,8 @@ import com.mymate.mymate.puzzle.entity.Puzzle;
 import com.mymate.mymate.puzzle.enums.PuzzleStatus;
 import com.mymate.mymate.puzzle.repository.PuzzleRepository;
 import com.mymate.mymate.puzzle.repository.PuzzleRepositoryCustom;
+import com.mymate.mymate.group.repository.GroupMemberRepository;
+import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,18 +32,24 @@ public class PuzzleServiceImpl implements PuzzleService {
 
     private final PuzzleRepository puzzleRepository;
     private final PuzzleRepositoryCustom puzzleRepositoryCustom;
+    private final GroupMemberRepository groupMemberRepository;
 
     @Override
     @Transactional
     public PuzzleResponse createPuzzle(Long memberId, PuzzleCreateRequest request) {
+        log.info("[PuzzleService] create start: memberId={}, title={}, scheduledDate={}",
+                memberId, request.getTitle(), request.getScheduledDate());
         // 반복 설정 검증
         validateRecurrenceSetting(request.getRecurrenceType(), request.getRecurrenceEndDate(), request.getScheduledDate());
+
+        Long groupId = getGroupId(memberId);
 
         Puzzle puzzle = Puzzle.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .scheduledDate(request.getScheduledDate())
                 .memberId(memberId)
+                .groupId(groupId)
                 .recurrenceType(request.getRecurrenceType())
                 .recurrenceEndDate(request.getRecurrenceEndDate())
                 .priority(request.getPriority())
@@ -48,22 +57,33 @@ public class PuzzleServiceImpl implements PuzzleService {
                 .build();
 
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
-        log.info("퍼즐 생성 완료: puzzleId={}, memberId={}", savedPuzzle.getId(), memberId);
+        log.info("[PuzzleService] create done: puzzleId={}, memberId={}, groupId={}",
+                savedPuzzle.getId(), memberId, savedPuzzle.getGroupId());
         
         return PuzzleResponse.from(savedPuzzle);
     }
 
     @Override
     public PuzzleResponse getPuzzle(Long memberId, Long puzzleId) {
+        log.info("[PuzzleService] get start: memberId={}, puzzleId={}", memberId, puzzleId);
         Puzzle puzzle = puzzleRepository.findByIdAndMemberId(puzzleId, memberId)
-                .orElseThrow(() -> new GeneralException(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
+                .orElseThrow(() -> new PuzzleHandler(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
+        log.info("[PuzzleService] get done: puzzleId={}, memberId={}, groupId={}",
+                puzzleId, memberId, puzzle.getGroupId());
         
         return PuzzleResponse.from(puzzle);
     }
 
     @Override
     public PuzzleListResponse getPuzzles(Long memberId, Pageable pageable) {
-        Page<Puzzle> puzzlePage = puzzleRepository.findByMemberId(memberId, pageable);
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] list start: memberId={}, groupId={}, pageable={}", memberId, groupId, pageable);
+        Page<Puzzle> puzzlePage = (groupId != null)
+                ? puzzleRepository.findByGroupId(groupId, pageable)
+                : puzzleRepository.findByMemberId(memberId, pageable);
         
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
@@ -79,8 +99,9 @@ public class PuzzleServiceImpl implements PuzzleService {
     @Override
     @Transactional
     public PuzzleResponse updatePuzzle(Long memberId, Long puzzleId, PuzzleUpdateRequest request) {
+        log.info("[PuzzleService] update start: memberId={}, puzzleId={}", memberId, puzzleId);
         Puzzle puzzle = puzzleRepository.findByIdAndMemberId(puzzleId, memberId)
-                .orElseThrow(() -> new GeneralException(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
+                .orElseThrow(() -> new PuzzleHandler(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
 
         // 수정할 필드들 업데이트
         if (request.getTitle() != null) {
@@ -100,7 +121,7 @@ public class PuzzleServiceImpl implements PuzzleService {
         }
 
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
-        log.info("퍼즐 수정 완료: puzzleId={}, memberId={}", puzzleId, memberId);
+        log.info("[PuzzleService] update done: puzzleId={}, memberId={}", puzzleId, memberId);
         
         return PuzzleResponse.from(savedPuzzle);
     }
@@ -108,40 +129,51 @@ public class PuzzleServiceImpl implements PuzzleService {
     @Override
     @Transactional
     public void deletePuzzle(Long memberId, Long puzzleId) {
+        log.info("[PuzzleService] delete start: memberId={}, puzzleId={}", memberId, puzzleId);
         Puzzle puzzle = puzzleRepository.findByIdAndMemberId(puzzleId, memberId)
-                .orElseThrow(() -> new GeneralException(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
+                .orElseThrow(() -> new PuzzleHandler(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
 
         puzzleRepository.delete(puzzle);
-        log.info("퍼즐 삭제 완료: puzzleId={}, memberId={}", puzzleId, memberId);
+        log.info("[PuzzleService] delete done: puzzleId={}, memberId={}", puzzleId, memberId);
     }
 
     @Override
     @Transactional
     public PuzzleResponse updatePuzzleStatus(Long memberId, Long puzzleId, PuzzleStatusUpdateRequest request) {
+        log.info("[PuzzleService] status update start: memberId={}, puzzleId={}, targetStatus={}",
+                memberId, puzzleId, request.getStatus());
         Puzzle puzzle = puzzleRepository.findByIdAndMemberId(puzzleId, memberId)
-                .orElseThrow(() -> new GeneralException(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
+                .orElseThrow(() -> new PuzzleHandler(PuzzleErrorStatus.PUZZLE_NOT_FOUND));
 
         if (request.getStatus() == PuzzleStatus.DONE) {
             if (puzzle.getStatus() == PuzzleStatus.DONE) {
-                throw new GeneralException(PuzzleErrorStatus.PUZZLE_ALREADY_COMPLETED);
+                throw new PuzzleHandler(PuzzleErrorStatus.PUZZLE_ALREADY_COMPLETED);
             }
             puzzle.complete();
         } else if (request.getStatus() == PuzzleStatus.INPROGRESS) {
             if (puzzle.getStatus() == PuzzleStatus.INPROGRESS) {
-                throw new GeneralException(PuzzleErrorStatus.PUZZLE_NOT_COMPLETED);
+                throw new PuzzleHandler(PuzzleErrorStatus.PUZZLE_NOT_COMPLETED);
             }
             puzzle.incomplete();
         }
 
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
-        log.info("퍼즐 상태 변경 완료: puzzleId={}, memberId={}, status={}", puzzleId, memberId, request.getStatus());
+        log.info("[PuzzleService] status update done: puzzleId={}, memberId={}, status={}",
+                puzzleId, memberId, request.getStatus());
         
         return PuzzleResponse.from(savedPuzzle);
     }
 
     @Override
     public List<PuzzleResponse> getPuzzlesByDate(Long memberId, LocalDate date) {
-        List<Puzzle> puzzles = puzzleRepository.findByMemberIdAndScheduledDate(memberId, date);
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] list by date start: memberId={}, groupId={}, date={}", memberId, groupId, date);
+        List<Puzzle> puzzles = (groupId != null)
+                ? puzzleRepository.findByGroupIdAndScheduledDate(groupId, date)
+                : puzzleRepository.findByMemberIdAndScheduledDate(memberId, date);
         return puzzles.stream()
                 .map(PuzzleResponse::from)
                 .toList();
@@ -149,7 +181,15 @@ public class PuzzleServiceImpl implements PuzzleService {
 
     @Override
     public List<PuzzleResponse> getPuzzlesByDateRange(Long memberId, LocalDate startDate, LocalDate endDate) {
-        List<Puzzle> puzzles = puzzleRepository.findByMemberIdAndScheduledDateBetween(memberId, startDate, endDate);
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] list by range start: memberId={}, groupId={}, startDate={}, endDate={}",
+                memberId, groupId, startDate, endDate);
+        List<Puzzle> puzzles = (groupId != null)
+                ? puzzleRepository.findByGroupIdAndScheduledDateBetween(groupId, startDate, endDate)
+                : puzzleRepository.findByMemberIdAndScheduledDateBetween(memberId, startDate, endDate);
         return puzzles.stream()
                 .map(PuzzleResponse::from)
                 .toList();
@@ -157,7 +197,15 @@ public class PuzzleServiceImpl implements PuzzleService {
 
     @Override
     public PuzzleListResponse getPuzzlesByStatus(Long memberId, PuzzleStatus status, Pageable pageable) {
-        Page<Puzzle> puzzlePage = puzzleRepository.findByMemberIdAndStatus(memberId, status, pageable);
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] list by status start: memberId={}, groupId={}, status={}, pageable={}",
+                memberId, groupId, status, pageable);
+        Page<Puzzle> puzzlePage = (groupId != null)
+                ? puzzleRepository.findByGroupIdAndStatus(groupId, status, pageable)
+                : puzzleRepository.findByMemberIdAndStatus(memberId, status, pageable);
         
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
@@ -172,6 +220,12 @@ public class PuzzleServiceImpl implements PuzzleService {
 
     @Override
     public PuzzleListResponse getPuzzlesByCategory(Long memberId, String category, Pageable pageable) {
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] list by category start: memberId={}, groupId={}, category={}, pageable={}",
+                memberId, groupId, category, pageable);
         Page<Puzzle> puzzlePage = puzzleRepository.findByMemberIdAndCategory(memberId, category, pageable);
         
         return PuzzleListResponse.from(
@@ -185,8 +239,22 @@ public class PuzzleServiceImpl implements PuzzleService {
         );
     }
 
+    private Long getGroupId(Long memberId) {
+        List<GroupMember> memberships = groupMemberRepository.findByMemberId(memberId);
+        Long groupId = memberships.stream().findFirst().map(GroupMember::getGroupId).orElse(null);
+        if (groupId == null) {
+            log.warn("[PuzzleService] group not found for memberId={}", memberId);
+        }
+        return groupId;
+    }
+
     @Override
     public PuzzleListResponse searchPuzzles(Long memberId, String searchText, Pageable pageable) {
+        Long groupId = getGroupId(memberId);
+        if (groupId == null) {
+            throw new PuzzleHandler(PuzzleErrorStatus.GROUP_NOT_FOUND);
+        }
+        log.info("[PuzzleService] search start: memberId={}, groupId={}, q={}, pageable={}", memberId, groupId, searchText, pageable);
         Page<Puzzle> puzzlePage = puzzleRepositoryCustom.searchByText(memberId, searchText, pageable);
         
         return PuzzleListResponse.from(
@@ -204,10 +272,10 @@ public class PuzzleServiceImpl implements PuzzleService {
                                          LocalDate recurrenceEndDate, LocalDate scheduledDate) {
         if (recurrenceType != com.mymate.mymate.puzzle.enums.RecurrenceType.NONE) {
             if (recurrenceEndDate == null) {
-                throw new GeneralException(PuzzleErrorStatus.INVALID_RECURRENCE_SETTING);
+                throw new PuzzleHandler(PuzzleErrorStatus.INVALID_RECURRENCE_SETTING);
             }
             if (recurrenceEndDate.isBefore(scheduledDate)) {
-                throw new GeneralException(PuzzleErrorStatus.INVALID_RECURRENCE_END_DATE);
+                throw new PuzzleHandler(PuzzleErrorStatus.INVALID_RECURRENCE_END_DATE);
             }
         }
     }
