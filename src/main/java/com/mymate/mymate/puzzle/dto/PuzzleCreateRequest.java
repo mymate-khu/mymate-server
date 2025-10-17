@@ -22,6 +22,7 @@ import java.time.LocalDate;
   "title": "운동하기",
   "description": "매일 30분 운동하기",
   "scheduledDate": "2024-01-15",
+  "memberLoginId": "sw1234",
   "recurrenceType": "DAILY",
   "recurrenceEndDate": "2024-01-31",
   "priority": "HIGH",
@@ -39,6 +40,9 @@ public class PuzzleCreateRequest {
 
     @NotNull(message = "예정일은 필수입니다")
     private LocalDate scheduledDate;
+
+    @Schema(description = "생성자 로그인 아이디", example = "sw1234")
+    private String memberLoginId;
 
     @Builder.Default
     private RecurrenceType recurrenceType = RecurrenceType.NONE;

@@ -1,24 +1,30 @@
 package com.mymate.mymate.group.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @Schema(description = "그룹 초대 생성 요청", example = """
 {
-  "inviteeIdentifier": "SZZYDE770"
+  "inviteeIdentifiers": ["SZZYDE770", "user@gmail.com", "ABC123"]
 }
 """)
 public class InvitationCreateRequest {
 
-    @NotBlank(message = "초대받을 사용자 식별자는 필수입니다")
-    @Schema(description = "초대받을 사용자 식별자 (사용자 ID 또는 이메일)", example = "SZZYDE770", required = true)
-    private String inviteeIdentifier;  // 사용자 ID 또는 이메일 (예: "SZZYDE770" 또는 "user@gmail.com")
+    @NotEmpty(message = "초대받을 사용자 식별자 목록은 필수입니다")
+    @Schema(description = "초대받을 사용자 식별자 목록 (사용자 ID 또는 이메일)", example = "[\"SZZYDE770\", \"user@gmail.com\"]", required = true)
+    @JsonProperty("inviteeIdentifiers")
+    private List<String> inviteeIdentifiers;  // 사용자 ID 또는 이메일 목록
 
-    public InvitationCreateRequest(String inviteeIdentifier) {
-        this.inviteeIdentifier = inviteeIdentifier;
+    public InvitationCreateRequest(List<String> inviteeIdentifiers) {
+        this.inviteeIdentifiers = inviteeIdentifiers;
     }
 }

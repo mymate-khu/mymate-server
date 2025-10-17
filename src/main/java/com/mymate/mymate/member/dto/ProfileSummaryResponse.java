@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @Schema(description = "프로필 요약 응답", example = """
 {
-  "memberId": 123,
+  "id": 123,
+  "memberLoginId": "sw1234",
   "username": "홍길동",
   "email": "user@example.com",
   "nickname": "길동이",
@@ -23,8 +24,11 @@ import lombok.NoArgsConstructor;
 """)
 public class ProfileSummaryResponse {
 
-    @Schema(description = "멤버 ID", example = "123")
-    private Long memberId;
+    @Schema(description = "ID", example = "123")
+    private Long id;
+
+    @Schema(description = "로그인 아이디", example = "sw1234")
+    private String memberLoginId;
     
     @Schema(description = "사용자명", example = "홍길동")
     private String username;

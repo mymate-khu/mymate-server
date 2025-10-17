@@ -33,7 +33,8 @@ public class MemberServiceImpl implements MemberService {
         MemberProfile profile = memberProfileRepository.findByMemberId(member.getId()).orElse(null);
 
         return ProfileSummaryResponse.builder()
-                .memberId(member.getId())
+                .id(member.getId())
+                .memberLoginId(member.getUserId())
                 .username(member.getUsername())
                 .email(member.getEmail())
                 .nickname(profile != null ? profile.getNickname() : null)
@@ -70,7 +71,8 @@ public class MemberServiceImpl implements MemberService {
         memberProfileRepository.save(profile);
 
         return ProfileSummaryResponse.builder()
-                .memberId(member.getId())
+                .id(member.getId())
+                .memberLoginId(member.getUserId())
                 .username(member.getUsername())
                 .email(member.getEmail())
                 .nickname(profile.getNickname())
