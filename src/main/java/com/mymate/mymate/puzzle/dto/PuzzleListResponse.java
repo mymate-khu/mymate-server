@@ -23,7 +23,7 @@ import java.util.List;
       "scheduledDate": "2024-01-15",
       "completedAt": null,
       "status": "PENDING",
-      "memberId": 123,
+      "memberLoginId": "sw1234",
       "recurrenceType": "DAILY",
       "recurrenceEndDate": "2024-01-31",
       "parentPuzzleId": null,
@@ -68,6 +68,24 @@ public class PuzzleListResponse {
                                         int currentPage, int size, boolean first, boolean last) {
         List<PuzzleResponse> puzzleResponses = puzzles.stream()
                 .map(PuzzleResponse::from)
+                .toList();
+        
+        return PuzzleListResponse.builder()
+                .puzzles(puzzleResponses)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .currentPage(currentPage)
+                .size(size)
+                .first(first)
+                .last(last)
+                .build();
+    }
+
+    public static PuzzleListResponse from(List<Puzzle> puzzles, long totalElements, int totalPages, 
+                                        int currentPage, int size, boolean first, boolean last, 
+                                        java.util.Map<Long, String> memberLoginIdMap) {
+        List<PuzzleResponse> puzzleResponses = puzzles.stream()
+                .map(puzzle -> PuzzleResponse.from(puzzle, memberLoginIdMap.get(puzzle.getMemberId())))
                 .toList();
         
         return PuzzleListResponse.builder()

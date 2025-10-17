@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
   "scheduledDate": "2024-01-15",
   "completedAt": null,
   "status": "PENDING",
-  "memberId": 123,
+  "memberLoginId": "sw1234",
   "recurrenceType": "DAILY",
   "recurrenceEndDate": "2024-01-31",
   "parentPuzzleId": null,
@@ -55,8 +55,8 @@ public class PuzzleResponse {
     @Schema(description = "상태", example = "PENDING")
     private PuzzleStatus status;
     
-    @Schema(description = "멤버 ID", example = "123")
-    private Long memberId;
+    @Schema(description = "멤버 로그인 아이디", example = "sw1234")
+    private String memberLoginId;
     
     @Schema(description = "반복 타입", example = "DAILY")
     private RecurrenceType recurrenceType;
@@ -87,7 +87,25 @@ public class PuzzleResponse {
                 .scheduledDate(puzzle.getScheduledDate())
                 .completedAt(puzzle.getCompletedAt())
                 .status(puzzle.getStatus())
-                .memberId(puzzle.getMemberId())
+                .recurrenceType(puzzle.getRecurrenceType())
+                .recurrenceEndDate(puzzle.getRecurrenceEndDate())
+                .parentPuzzleId(puzzle.getParentPuzzleId())
+                .priority(puzzle.getPriority())
+                .category(puzzle.getCategory())
+                .createdAt(puzzle.getCreatedAt())
+                .updatedAt(puzzle.getUpdatedAt())
+                .build();
+    }
+
+    public static PuzzleResponse from(Puzzle puzzle, String memberLoginId) {
+        return PuzzleResponse.builder()
+                .id(puzzle.getId())
+                .title(puzzle.getTitle())
+                .description(puzzle.getDescription())
+                .scheduledDate(puzzle.getScheduledDate())
+                .completedAt(puzzle.getCompletedAt())
+                .status(puzzle.getStatus())
+                .memberLoginId(memberLoginId)
                 .recurrenceType(puzzle.getRecurrenceType())
                 .recurrenceEndDate(puzzle.getRecurrenceEndDate())
                 .parentPuzzleId(puzzle.getParentPuzzleId())

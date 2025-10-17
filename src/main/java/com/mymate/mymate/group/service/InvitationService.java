@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface InvitationService {
     
-    InvitationResponse createInvitation(InvitationCreateRequest request, Long inviterId);
+    List<InvitationResponse> createInvitations(InvitationCreateRequest request, String inviterMemberLoginId);
     
     List<InvitationResponse> getMyInvitations(Long memberId);
     

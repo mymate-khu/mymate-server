@@ -14,6 +14,8 @@ import com.mymate.mymate.puzzle.repository.PuzzleRepositoryCustom;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
+import com.mymate.mymate.member.Member;
+import com.mymate.mymate.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,7 @@ public class PuzzleServiceImpl implements PuzzleService {
     private final PuzzleRepository puzzleRepository;
     private final PuzzleRepositoryCustom puzzleRepositoryCustom;
     private final GroupMemberRepository groupMemberRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     @Transactional
@@ -60,7 +63,8 @@ public class PuzzleServiceImpl implements PuzzleService {
         log.info("[PuzzleService] create done: puzzleId={}, memberId={}, groupId={}",
                 savedPuzzle.getId(), memberId, savedPuzzle.getGroupId());
         
-        return PuzzleResponse.from(savedPuzzle);
+        String memberLoginIdForCreate = getMemberLoginId(memberId);
+        return PuzzleResponse.from(savedPuzzle, memberLoginIdForCreate);
     }
 
     @Override
@@ -71,7 +75,8 @@ public class PuzzleServiceImpl implements PuzzleService {
         log.info("[PuzzleService] get done: puzzleId={}, memberId={}, groupId={}",
                 puzzleId, memberId, puzzle.getGroupId());
         
-        return PuzzleResponse.from(puzzle);
+        String memberLoginIdForGet = getMemberLoginId(memberId);
+        return PuzzleResponse.from(puzzle, memberLoginIdForGet);
     }
 
     @Override
@@ -85,6 +90,9 @@ public class PuzzleServiceImpl implements PuzzleService {
                 ? puzzleRepository.findByGroupId(groupId, pageable)
                 : puzzleRepository.findByMemberId(memberId, pageable);
         
+        // 퍼즐 작성자들의 memberLoginId 조회
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzlePage.getContent());
+        
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
                 puzzlePage.getTotalElements(),
@@ -92,7 +100,8 @@ public class PuzzleServiceImpl implements PuzzleService {
                 puzzlePage.getNumber(),
                 puzzlePage.getSize(),
                 puzzlePage.isFirst(),
-                puzzlePage.isLast()
+                puzzlePage.isLast(),
+                memberLoginIdMap
         );
     }
 
@@ -123,7 +132,8 @@ public class PuzzleServiceImpl implements PuzzleService {
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
         log.info("[PuzzleService] update done: puzzleId={}, memberId={}", puzzleId, memberId);
         
-        return PuzzleResponse.from(savedPuzzle);
+        String memberLoginIdForUpdate = getMemberLoginId(memberId);
+        return PuzzleResponse.from(savedPuzzle, memberLoginIdForUpdate);
     }
 
     @Override
@@ -161,7 +171,8 @@ public class PuzzleServiceImpl implements PuzzleService {
         log.info("[PuzzleService] status update done: puzzleId={}, memberId={}, status={}",
                 puzzleId, memberId, request.getStatus());
         
-        return PuzzleResponse.from(savedPuzzle);
+        String memberLoginIdForStatus = getMemberLoginId(memberId);
+        return PuzzleResponse.from(savedPuzzle, memberLoginIdForStatus);
     }
 
     @Override
@@ -175,7 +186,7 @@ public class PuzzleServiceImpl implements PuzzleService {
                 ? puzzleRepository.findByGroupIdAndScheduledDate(groupId, date)
                 : puzzleRepository.findByMemberIdAndScheduledDate(memberId, date);
         return puzzles.stream()
-                .map(PuzzleResponse::from)
+                .map(p -> PuzzleResponse.from(p, getMemberLoginId(memberId)))
                 .toList();
     }
 
@@ -191,7 +202,7 @@ public class PuzzleServiceImpl implements PuzzleService {
                 ? puzzleRepository.findByGroupIdAndScheduledDateBetween(groupId, startDate, endDate)
                 : puzzleRepository.findByMemberIdAndScheduledDateBetween(memberId, startDate, endDate);
         return puzzles.stream()
-                .map(PuzzleResponse::from)
+                .map(p -> PuzzleResponse.from(p, getMemberLoginId(memberId)))
                 .toList();
     }
 
@@ -207,6 +218,9 @@ public class PuzzleServiceImpl implements PuzzleService {
                 ? puzzleRepository.findByGroupIdAndStatus(groupId, status, pageable)
                 : puzzleRepository.findByMemberIdAndStatus(memberId, status, pageable);
         
+        // 퍼즐 작성자들의 memberLoginId 조회
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzlePage.getContent());
+        
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
                 puzzlePage.getTotalElements(),
@@ -214,7 +228,8 @@ public class PuzzleServiceImpl implements PuzzleService {
                 puzzlePage.getNumber(),
                 puzzlePage.getSize(),
                 puzzlePage.isFirst(),
-                puzzlePage.isLast()
+                puzzlePage.isLast(),
+                memberLoginIdMap
         );
     }
 
@@ -228,6 +243,9 @@ public class PuzzleServiceImpl implements PuzzleService {
                 memberId, groupId, category, pageable);
         Page<Puzzle> puzzlePage = puzzleRepository.findByMemberIdAndCategory(memberId, category, pageable);
         
+        // 퍼즐 작성자들의 memberLoginId 조회
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzlePage.getContent());
+        
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
                 puzzlePage.getTotalElements(),
@@ -235,7 +253,8 @@ public class PuzzleServiceImpl implements PuzzleService {
                 puzzlePage.getNumber(),
                 puzzlePage.getSize(),
                 puzzlePage.isFirst(),
-                puzzlePage.isLast()
+                puzzlePage.isLast(),
+                memberLoginIdMap
         );
     }
 
@@ -248,6 +267,24 @@ public class PuzzleServiceImpl implements PuzzleService {
         return groupId;
     }
 
+    private String getMemberLoginId(Long memberId) {
+        return memberRepository.findById(memberId)
+                .map(Member::getUserId)
+                .orElse(null);
+    }
+
+    private java.util.Map<Long, String> getMemberLoginIdMap(List<Puzzle> puzzles) {
+        java.util.Set<Long> memberIds = puzzles.stream()
+                .map(Puzzle::getMemberId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        return memberRepository.findAllById(memberIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Member::getId,
+                        Member::getUserId
+                ));
+    }
+
     @Override
     public PuzzleListResponse searchPuzzles(Long memberId, String searchText, Pageable pageable) {
         Long groupId = getGroupId(memberId);
@@ -257,6 +294,9 @@ public class PuzzleServiceImpl implements PuzzleService {
         log.info("[PuzzleService] search start: memberId={}, groupId={}, q={}, pageable={}", memberId, groupId, searchText, pageable);
         Page<Puzzle> puzzlePage = puzzleRepositoryCustom.searchByText(memberId, searchText, pageable);
         
+        // 퍼즐 작성자들의 memberLoginId 조회
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzlePage.getContent());
+        
         return PuzzleListResponse.from(
                 puzzlePage.getContent(),
                 puzzlePage.getTotalElements(),
@@ -264,7 +304,8 @@ public class PuzzleServiceImpl implements PuzzleService {
                 puzzlePage.getNumber(),
                 puzzlePage.getSize(),
                 puzzlePage.isFirst(),
-                puzzlePage.isLast()
+                puzzlePage.isLast(),
+                memberLoginIdMap
         );
     }
 
