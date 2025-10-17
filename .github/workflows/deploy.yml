@@ -60,6 +60,9 @@ jobs:
         working-directory: /home/ubuntu
         run: sudo docker compose --env-file .env down || true
 
+      - name: Prune old images
+        run: sudo docker system prune -f
+
       - name: Pull new image
         run: sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mymate:latest
 
@@ -67,5 +70,4 @@ jobs:
         working-directory: /home/ubuntu
         run: sudo docker compose --env-file .env up -d --remove-orphans
 
-      - name: Prune old images
-        run: sudo docker system prune -f
+
