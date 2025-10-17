@@ -431,24 +431,40 @@ public class AccountServiceImpl implements AccountService {
                 .map(AccountParticipant::getMemberId)
                 .collect(Collectors.toList());
 
-        // 멤버 정보 조회
-        Map<Long, String> memberNameMap = memberRepository.findAllById(memberIds).stream()
+        // 멤버 정보 조회 (참여자 + 생성자)
+        Set<Long> allMemberIds = new HashSet<>(memberIds);
+        allMemberIds.add(account.getCreatedBy());
+
+        Map<Long, Member> memberMap = memberRepository.findAllById(allMemberIds).stream()
+                .collect(Collectors.toMap(Member::getId, member -> member));
+
+        Map<Long, String> memberNameMap = memberMap.entrySet().stream()
                 .collect(Collectors.toMap(
-                        Member::getId,
-                        member -> member.getUsername() != null ? member.getUsername() : member.getEmail()
+                        Map.Entry::getKey,
+                        entry -> {
+                            Member member = entry.getValue();
+                            return member.getUsername() != null ? member.getUsername() : member.getEmail();
+                        }
                 ));
 
-        // ParticipantResponse 생성
+        // ParticipantResponse 생성 (로그인 아이디 포함)
         List<AccountResponse.ParticipantResponse> participantResponses = participants.stream()
-                .map(participant -> AccountResponse.ParticipantResponse.builder()
-                        .id(participant.getId())
-                        .memberId(participant.getMemberId())
-                        .memberName(memberNameMap.get(participant.getMemberId()))
-                        .paymentAmount(participant.getPaymentAmount())
-                        .isPaid(participant.getIsPaid())
-                        .build())
+                .map(participant -> {
+                    Member member = memberMap.get(participant.getMemberId());
+                    return AccountResponse.ParticipantResponse.builder()
+                            .id(participant.getId())
+                            .memberLoginId(member != null ? member.getUserId() : null)
+                            .memberName(memberNameMap.get(participant.getMemberId()))
+                            .paymentAmount(participant.getPaymentAmount())
+                            .isPaid(participant.getIsPaid())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
-        return AccountResponse.from(account, participantResponses);
+        // 생성자의 로그인 아이디
+        Member createdByMember = memberMap.get(account.getCreatedBy());
+        String createdByMemberId = createdByMember != null ? createdByMember.getUserId() : null;
+
+        return AccountResponse.from(account, participantResponses, createdByMemberId);
     }
 }

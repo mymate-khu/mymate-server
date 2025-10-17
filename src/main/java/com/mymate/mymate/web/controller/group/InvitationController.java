@@ -9,6 +9,10 @@ import com.mymate.mymate.common.exception.ApiErrorCodeExample;
 import com.mymate.mymate.common.exception.ApiErrorCodeExamples;
 import com.mymate.mymate.group.status.GroupErrorStatus;
 import com.mymate.mymate.auth.jwt.UserPrincipal;
+import com.mymate.mymate.member.Member;
+import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.common.exception.member.MemberHandler;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,11 +35,12 @@ import java.util.List;
 public class InvitationController {
 
     private final InvitationService invitationService;
+    private final MemberRepository memberRepository;
 
     @PostMapping("/invitations")
     @Operation(
         summary = "그룹 초대 생성", 
-        description = "현재 사용자의 그룹에 다른 사용자를 초대합니다. 사용자당 하나의 그룹만 가질 수 있으므로 그룹 ID는 필요하지 않습니다. 사용자 ID 또는 이메일로 초대할 수 있습니다.",
+        description = "현재 사용자의 그룹에 여러 사용자를 동시에 초대합니다. 사용자당 하나의 그룹만 가질 수 있으므로 그룹 ID는 필요하지 않습니다. 사용자 ID 또는 이메일 목록으로 초대할 수 있습니다.",
         tags = {"Invitation"}
     )
     @ApiErrorCodeExamples({
@@ -44,13 +49,17 @@ public class InvitationController {
             codes = {"GROUP_NOT_FOUND", "INVITATION_ALREADY_EXISTS", "FORBIDDEN", "MEMBER_ALREADY_IN_GROUP"}
         )
     })
-    public ResponseEntity<ApiResponse<InvitationResponse>> createInvitation(
+    public ResponseEntity<ApiResponse<List<InvitationResponse>>> createInvitations(
             @Valid @RequestBody InvitationCreateRequest request,
             @Parameter(description = "초대자 ID", hidden = true)
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
-        InvitationResponse response = invitationService.createInvitation(request, userPrincipal.getId());
-        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_CREATED, response);
+        // UserPrincipal의 id로 Member를 조회하여 memberLoginId를 가져옴
+        Member inviter = memberRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        
+        List<InvitationResponse> responses = invitationService.createInvitations(request, inviter.getUserId());
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_CREATED, responses);
     }
 
     @GetMapping("/me")

@@ -29,11 +29,11 @@ import java.util.List;
   "receiveAmount": 100000,
   "status": "PENDING",
   "groupId": 1,
-  "createdBy": 123,
+  "createdByMemberId": "sw1234",
   "participants": [
     {
       "id": 1,
-      "memberId": 123,
+      "memberLoginId": "sw1234",
       "memberName": "홍길동",
       "paymentAmount": 30000,
       "isPaid": true
@@ -75,8 +75,8 @@ public class AccountResponse {
     @Schema(description = "그룹 ID", example = "1")
     private Long groupId;
 
-    @Schema(description = "생성자 ID", example = "123")
-    private Long createdBy;
+    @Schema(description = "생성자 로그인 아이디", example = "sw1234")
+    private String createdByMemberId;
 
     @Schema(description = "정산 참여자 목록")
     private List<ParticipantResponse> participants;
@@ -87,7 +87,7 @@ public class AccountResponse {
     @Schema(description = "수정일시", example = "2024-01-15T10:30:00")
     private LocalDateTime updatedAt;
 
-    public static AccountResponse from(Account account, List<ParticipantResponse> participants) {
+    public static AccountResponse from(Account account, List<ParticipantResponse> participants, String createdByMemberId) {
         return AccountResponse.builder()
                 .id(account.getId())
                 .title(account.getTitle())
@@ -99,7 +99,7 @@ public class AccountResponse {
                 .receiveAmount(account.getReceiveAmount())
                 .status(account.getStatus())
                 .groupId(account.getGroupId())
-                .createdBy(account.getCreatedBy())
+                .createdByMemberId(createdByMemberId)
                 .participants(participants)
                 .createdAt(account.getCreatedAt())
                 .updatedAt(account.getUpdatedAt())
@@ -115,8 +115,8 @@ public class AccountResponse {
         @Schema(description = "참여자 ID", example = "1")
         private Long id;
 
-        @Schema(description = "멤버 ID", example = "123")
-        private Long memberId;
+        @Schema(description = "멤버 로그인 아이디", example = "sw1234")
+        private String memberLoginId;
 
         @Schema(description = "멤버명", example = "홍길동")
         private String memberName;

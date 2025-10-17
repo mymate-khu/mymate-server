@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,13 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Override
     @Transactional
-    public InvitationResponse createInvitation(InvitationCreateRequest request, Long inviterId) {
+    public List<InvitationResponse> createInvitations(InvitationCreateRequest request, String inviterMemberLoginId) {
+        // memberLoginId로 초대자 Member 조회
+        Member inviter = memberRepository.findByUserId(inviterMemberLoginId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        
+        Long inviterId = inviter.getId();
+        
         // 초대자의 그룹 조회 (사용자당 하나의 그룹만 가질 수 있음)
         List<GroupMember> inviterMemberships = groupMemberRepository.findByMemberId(inviterId);
         if (inviterMemberships.isEmpty()) {
@@ -55,42 +62,58 @@ public class InvitationServiceImpl implements InvitationService {
             throw new GroupHandler(GroupErrorStatus.FORBIDDEN);
         }
 
-        // 초대받을 사용자 존재 확인 (userId 또는 email로 검색)
-        Member invitee = memberRepository.findFirstByUserId(request.getInviteeIdentifier())
-                .or(() -> memberRepository.findByEmail(request.getInviteeIdentifier()))
-                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
-
-        // 이미 그룹에 속한 멤버인지 확인
-        if (groupMemberRepository.existsByGroupIdAndMemberId(group.getId(), invitee.getId())) {
-            throw new GroupHandler(GroupErrorStatus.MEMBER_ALREADY_IN_GROUP);
-        }
-
-        // 이미 대기 중인 초대가 있는지 확인
-        if (invitationRepository.existsByGroupIdAndInviteeIdAndStatus(
-                group.getId(), invitee.getId(), Invitation.InvitationStatus.PENDING)) {
-            throw new GroupHandler(GroupErrorStatus.INVITATION_ALREADY_EXISTS);
-        }
-
-        // 초대 생성
-        Invitation invitation = Invitation.builder()
-                .groupId(group.getId())
-                .inviterId(inviterId)
-                .inviteeId(invitee.getId())
-                .expiresAt(LocalDateTime.now().plusHours(INVITATION_EXPIRY_HOURS))
-                .build();
-
-        Invitation savedInvitation = invitationRepository.save(invitation);
-
         // 초대자 이름 조회 (username이 null이면 email 사용)
-        Member inviter = memberRepository.findById(inviterId)
-                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
-        
         String inviterDisplayName = inviter.getUsername() != null ? inviter.getUsername() : inviter.getEmail();
 
-        log.info("초대 생성 완료: invitationId={}, groupId={}, inviterId={}, inviteeId={}", 
-                savedInvitation.getId(), group.getId(), inviterId, invitee.getId());
+        List<InvitationResponse> responses = new ArrayList<>();
+        List<String> failedInvitations = new ArrayList<>();
 
-        return new InvitationResponse(savedInvitation, group.getName(), inviterDisplayName);
+        for (String inviteeIdentifier : request.getInviteeIdentifiers()) {
+            try {
+                // 초대받을 사용자 존재 확인 (userId 또는 email로 검색)
+                Member invitee = memberRepository.findFirstByUserId(inviteeIdentifier)
+                        .or(() -> memberRepository.findByEmail(inviteeIdentifier))
+                        .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+
+                // 이미 그룹에 속한 멤버인지 확인
+                if (groupMemberRepository.existsByGroupIdAndMemberId(group.getId(), invitee.getId())) {
+                    failedInvitations.add(inviteeIdentifier + " (이미 그룹에 속한 멤버)");
+                    continue;
+                }
+
+                // 이미 대기 중인 초대가 있는지 확인
+                if (invitationRepository.existsByGroupIdAndInviteeIdAndStatus(
+                        group.getId(), invitee.getId(), Invitation.InvitationStatus.PENDING)) {
+                    failedInvitations.add(inviteeIdentifier + " (이미 대기 중인 초대)");
+                    continue;
+                }
+
+                // 초대 생성
+                Invitation invitation = Invitation.builder()
+                        .groupId(group.getId())
+                        .inviterId(inviterId)
+                        .inviteeId(invitee.getId())
+                        .expiresAt(LocalDateTime.now().plusHours(INVITATION_EXPIRY_HOURS))
+                        .build();
+
+                Invitation savedInvitation = invitationRepository.save(invitation);
+                responses.add(new InvitationResponse(savedInvitation, group.getName(), inviterDisplayName));
+
+                log.info("초대 생성 완료: invitationId={}, groupId={}, inviterId={}, inviteeId={}", 
+                        savedInvitation.getId(), group.getId(), inviterId, invitee.getId());
+
+            } catch (Exception e) {
+                log.warn("초대 생성 실패: inviteeIdentifier={}, error={}", inviteeIdentifier, e.getMessage());
+                failedInvitations.add(inviteeIdentifier + " (사용자를 찾을 수 없음)");
+            }
+        }
+
+        if (!failedInvitations.isEmpty()) {
+            log.warn("일부 초대 생성 실패: {}", String.join(", ", failedInvitations));
+        }
+
+        log.info("초대 생성 완료: 성공={}, 실패={}", responses.size(), failedInvitations.size());
+        return responses;
     }
 
     @Override
