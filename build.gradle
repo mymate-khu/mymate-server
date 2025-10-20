@@ -63,6 +63,9 @@ dependencies {
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
 	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // 웹 소캣 실시간 채팅
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 tasks.named('test') {
 	useJUnitPlatform()

@@ -36,9 +36,15 @@ logging:
 
 
 
-# 공통 설정이 있다면 여기에
+# JWT 설정
 jwt:
-  secret: your-super-secret-key-that-should-be-long-and-secure
+  secret: ${JWT_SECRET:your-super-secret-key-that-should-be-long-and-secure-at-least-256-bits}
+  expiration-ms: ${JWT_EXPIRATION_MS:1800000}  # 30분 (30 * 60 * 1000)
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:1209600000}  # 14일 (14 * 24 * 60 * 60 * 1000)
+  token-prefix: Bearer
+  issuer: mymate-server
+  audiences:
+    - mymate-client
 
 solapi:
   api-key: ${SOLAPI_API_KEY:}

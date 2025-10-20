@@ -358,35 +358,35 @@ public class AccountServiceImpl implements AccountService {
     private void updateParticipants(Long accountId, List<Long> newParticipantIds, BigDecimal receiveAmount) {
         // 기존 참여자 조회
         List<AccountParticipant> existingParticipants = participantRepository.findByAccountId(accountId);
-        
+
         // 기존 참여자 ID 목록
         Set<Long> existingParticipantIds = existingParticipants.stream()
                 .map(AccountParticipant::getMemberId)
                 .collect(Collectors.toSet());
-        
+
         // 새 참여자 ID 목록
         Set<Long> newParticipantIdSet = new HashSet<>(newParticipantIds);
-        
+
         // 삭제할 참여자들 (기존에 있지만 새 목록에 없는)
         Set<Long> toDeleteIds = existingParticipantIds.stream()
                 .filter(id -> !newParticipantIdSet.contains(id))
                 .collect(Collectors.toSet());
-        
+
         // 추가할 참여자들 (새 목록에 있지만 기존에 없는)
         Set<Long> toAddIds = newParticipantIdSet.stream()
                 .filter(id -> !existingParticipantIds.contains(id))
                 .collect(Collectors.toSet());
-        
+
         // 삭제할 참여자들 제거
         if (!toDeleteIds.isEmpty()) {
             participantRepository.deleteByAccountIdAndMemberIdIn(accountId, toDeleteIds);
         }
-        
+
         // 추가할 참여자들 추가
         if (!toAddIds.isEmpty()) {
             BigDecimal paymentAmountPerPerson = receiveAmount
                     .divide(BigDecimal.valueOf(newParticipantIds.size()), 2, RoundingMode.HALF_UP);
-            
+
             List<AccountParticipant> newParticipants = toAddIds.stream()
                     .map(participantId -> AccountParticipant.builder()
                             .accountId(accountId)
@@ -394,15 +394,15 @@ public class AccountServiceImpl implements AccountService {
                             .paymentAmount(paymentAmountPerPerson)
                             .build())
                     .collect(Collectors.toList());
-            
+
             participantRepository.saveAll(newParticipants);
         }
-        
+
         // 기존 참여자들의 지불 금액 업데이트 (참여자 수가 변경되었을 수 있음)
         if (!existingParticipants.isEmpty() && !toDeleteIds.isEmpty() && !toAddIds.isEmpty()) {
             BigDecimal updatedPaymentAmountPerPerson = receiveAmount
                     .divide(BigDecimal.valueOf(newParticipantIds.size()), 2, RoundingMode.HALF_UP);
-            
+
             existingParticipants.stream()
                     .filter(p -> !toDeleteIds.contains(p.getMemberId()))
                     .forEach(p -> p.updatePaymentAmount(updatedPaymentAmountPerPerson));
@@ -431,24 +431,41 @@ public class AccountServiceImpl implements AccountService {
                 .map(AccountParticipant::getMemberId)
                 .collect(Collectors.toList());
 
-        // 멤버 정보 조회
-        Map<Long, String> memberNameMap = memberRepository.findAllById(memberIds).stream()
+        // 멤버 정보 조회 (참여자 + 생성자)
+        Set<Long> allMemberIds = new HashSet<>(memberIds);
+        allMemberIds.add(account.getCreatedBy());
+
+        Map<Long, Member> memberMap = memberRepository.findAllById(allMemberIds).stream()
+                .collect(Collectors.toMap(Member::getId, member -> member));
+
+        Map<Long, String> memberNameMap = memberMap.entrySet().stream()
                 .collect(Collectors.toMap(
-                        Member::getId,
-                        member -> member.getUsername() != null ? member.getUsername() : member.getEmail()
+                        Map.Entry::getKey,
+                        entry -> {
+                            Member member = entry.getValue();
+                            return member.getUsername() != null ? member.getUsername() : member.getEmail();
+                        }
                 ));
 
-        // ParticipantResponse 생성
+        // ParticipantResponse 생성 (memberId 포함)
         List<AccountResponse.ParticipantResponse> participantResponses = participants.stream()
-                .map(participant -> AccountResponse.ParticipantResponse.builder()
-                        .id(participant.getId())
-                        .memberId(participant.getMemberId())
-                        .memberName(memberNameMap.get(participant.getMemberId()))
-                        .paymentAmount(participant.getPaymentAmount())
-                        .isPaid(participant.getIsPaid())
-                        .build())
+                .map(participant -> {
+                    Member member = memberMap.get(participant.getMemberId());
+                    return AccountResponse.ParticipantResponse.builder()
+                            .id(participant.getId())
+                            .memberId(participant.getMemberId())  // memberId 추가
+                            .memberLoginId(member != null ? member.getUserId() : null)
+                            .memberName(memberNameMap.get(participant.getMemberId()))
+                            .paymentAmount(participant.getPaymentAmount())
+                            .isPaid(participant.getIsPaid())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
-        return AccountResponse.from(account, participantResponses);
+        // 생성자의 로그인 아이디
+        Member createdByMember = memberMap.get(account.getCreatedBy());
+        String createdByMemberId = createdByMember != null ? createdByMember.getUserId() : null;
+
+        return AccountResponse.from(account, participantResponses, createdByMemberId);
     }
 }
