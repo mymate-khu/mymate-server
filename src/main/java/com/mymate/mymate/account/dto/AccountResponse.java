@@ -33,6 +33,7 @@ import java.util.List;
   "participants": [
     {
       "id": 1,
+      "memberId": 123,
       "memberLoginId": "sw1234",
       "memberName": "홍길동",
       "paymentAmount": 30000,
@@ -114,6 +115,9 @@ public class AccountResponse {
     public static class ParticipantResponse {
         @Schema(description = "참여자 ID", example = "1")
         private Long id;
+
+        @Schema(description = "멤버 ID", example = "123")
+        private Long memberId;
 
         @Schema(description = "멤버 로그인 아이디", example = "sw1234")
         private String memberLoginId;
