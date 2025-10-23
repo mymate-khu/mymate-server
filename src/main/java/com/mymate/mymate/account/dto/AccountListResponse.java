@@ -27,8 +27,17 @@ import java.util.List;
       "receiveAmount": 100000,
       "status": "PENDING",
       "groupId": 1,
-      "createdBy": 123,
-      "participants": [],
+      "createdByMemberId": "sw1234",
+      "participants": [
+        {
+          "id": 1,
+          "memberId": 123,
+          "memberLoginId": "sw1234",
+          "memberName": "홍길동",
+          "paymentAmount": 30000,
+          "isPaid": true
+        }
+      ],
       "createdAt": "2024-01-15T10:30:00",
       "updatedAt": "2024-01-15T10:30:00"
     }
