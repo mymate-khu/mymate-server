@@ -1,6 +1,8 @@
 package com.mymate.mymate.puzzle.service;
 
 import com.mymate.mymate.common.exception.general.GeneralException;
+import com.mymate.mymate.common.exception.member.MemberHandler;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.common.exception.puzzle.PuzzleHandler;
 import com.mymate.mymate.puzzle.dto.PuzzleCreateRequest;
 import com.mymate.mymate.puzzle.dto.PuzzleListResponse;
@@ -16,8 +18,10 @@ import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.common.exception.puzzle.status.PuzzleErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.notification.event.PuzzleCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +40,7 @@ public class PuzzleServiceImpl implements PuzzleService {
     private final PuzzleRepositoryCustom puzzleRepositoryCustom;
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -62,6 +67,19 @@ public class PuzzleServiceImpl implements PuzzleService {
         Puzzle savedPuzzle = puzzleRepository.save(puzzle);
         log.info("[PuzzleService] create done: puzzleId={}, memberId={}, groupId={}",
                 savedPuzzle.getId(), memberId, savedPuzzle.getGroupId());
+        
+        // 퍼즐 생성 이벤트 발행
+        Member creator = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        String creatorName = creator.getUsername() != null ? creator.getUsername() : creator.getEmail();
+        
+        PuzzleCreatedEvent event = new PuzzleCreatedEvent(
+            savedPuzzle.getGroupId(), 
+            memberId, 
+            savedPuzzle.getTitle(), 
+            creatorName
+        );
+        eventPublisher.publishEvent(event);
         
         String memberLoginIdForCreate = getMemberLoginId(memberId);
         return PuzzleResponse.from(savedPuzzle, memberLoginIdForCreate);
