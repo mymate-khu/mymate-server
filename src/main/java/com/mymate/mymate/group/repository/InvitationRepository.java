@@ -24,4 +24,10 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     
     @Query("SELECT i FROM Invitation i WHERE i.inviteeId = :inviteeId AND i.status = 'PENDING'")
     List<Invitation> findPendingInvitationsByInviteeId(@Param("inviteeId") Long inviteeId);
+    
+    // 보낸 초대장 조회 (초대자 기준)
+    List<Invitation> findByInviterIdOrderByCreatedAtDesc(Long inviterId);
+    
+    // 보낸 초대장 조회 (상태별 필터링)
+    List<Invitation> findByInviterIdAndStatusOrderByCreatedAtDesc(Long inviterId, Invitation.InvitationStatus status);
 }

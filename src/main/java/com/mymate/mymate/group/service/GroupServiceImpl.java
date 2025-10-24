@@ -8,6 +8,7 @@ import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.repository.GroupRepository;
 import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.member.Member;
 import com.mymate.mymate.puzzle.repository.PuzzleRepository;
 import com.mymate.mymate.chat.entity.ChatRoom;
 import com.mymate.mymate.chat.entity.ChatParticipant;
@@ -99,10 +100,16 @@ public class GroupServiceImpl implements GroupService {
                     // 그룹의 모든 멤버 조회
                     List<GroupMember> allMembers = groupMemberRepository.findByGroupId(group.getId());
                     List<GroupResponse.MemberResponse> memberResponses = allMembers.stream()
-                            .map(member -> new GroupResponse.MemberResponse(
-                                    member.getId(), 
-                                    member.getMemberId(), 
-                                    member.getJoinedAt()))
+                            .map(member -> {
+                                // Member 정보 조회
+                                Member memberInfo = memberRepository.findById(member.getMemberId())
+                                        .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                                
+                                return new GroupResponse.MemberResponse(
+                                        memberInfo.getUserId(),
+                                        memberInfo.getUsername(),
+                                        member.getJoinedAt());
+                            })
                             .collect(Collectors.toList());
                     
                     return new GroupResponse(group, memberResponses);
@@ -254,10 +261,16 @@ public class GroupServiceImpl implements GroupService {
         // 그룹의 모든 멤버 조회
         List<GroupMember> allMembers = groupMemberRepository.findByGroupId(groupId);
         List<GroupResponse.MemberResponse> memberResponses = allMembers.stream()
-                .map(member -> new GroupResponse.MemberResponse(
-                        member.getId(), 
-                        member.getMemberId(), 
-                        member.getJoinedAt()))
+                .map(groupMember -> {
+                    // Member 정보 조회
+                    Member member = memberRepository.findById(groupMember.getMemberId())
+                            .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                    
+                    return new GroupResponse.MemberResponse(
+                            member.getUserId(),
+                            member.getUsername(),
+                            groupMember.getJoinedAt());
+                })
                 .collect(Collectors.toList());
 
         log.info("그룹 이름 변경 완료: groupId={}, newName={}, requesterId={}", 
