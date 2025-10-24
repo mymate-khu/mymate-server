@@ -203,8 +203,10 @@ public class PuzzleServiceImpl implements PuzzleService {
         List<Puzzle> puzzles = (groupId != null)
                 ? puzzleRepository.findByGroupIdAndScheduledDate(groupId, date)
                 : puzzleRepository.findByMemberIdAndScheduledDate(memberId, date);
+        
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzles);
         return puzzles.stream()
-                .map(p -> PuzzleResponse.from(p, getMemberLoginId(memberId)))
+                .map(p -> PuzzleResponse.from(p, memberLoginIdMap.get(p.getMemberId())))
                 .toList();
     }
 
@@ -219,8 +221,10 @@ public class PuzzleServiceImpl implements PuzzleService {
         List<Puzzle> puzzles = (groupId != null)
                 ? puzzleRepository.findByGroupIdAndScheduledDateBetween(groupId, startDate, endDate)
                 : puzzleRepository.findByMemberIdAndScheduledDateBetween(memberId, startDate, endDate);
+        
+        java.util.Map<Long, String> memberLoginIdMap = getMemberLoginIdMap(puzzles);
         return puzzles.stream()
-                .map(p -> PuzzleResponse.from(p, getMemberLoginId(memberId)))
+                .map(p -> PuzzleResponse.from(p, memberLoginIdMap.get(p.getMemberId())))
                 .toList();
     }
 
