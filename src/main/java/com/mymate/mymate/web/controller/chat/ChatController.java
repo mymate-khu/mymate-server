@@ -1,7 +1,9 @@
 package com.mymate.mymate.web.controller.chat;
 
 import com.mymate.mymate.auth.jwt.UserPrincipal;
-import com.mymate.mymate.chat.dto.*;
+import com.mymate.mymate.chat.dto.ChatRoomResponse;
+import com.mymate.mymate.chat.dto.ChatMessageRequest;
+import com.mymate.mymate.chat.dto.ChatMessageResponse;
 import com.mymate.mymate.chat.service.ChatService;
 import com.mymate.mymate.common.exception.ApiErrorCodeExample;
 import com.mymate.mymate.common.exception.ApiResponse;
@@ -35,22 +37,6 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    @PostMapping("/rooms")
-    @Operation(
-            summary = "채팅방 생성",
-            description = "새로운 채팅방을 생성합니다. 그룹의 모든 멤버가 자동으로 참여자로 추가됩니다.",
-            tags = {"Chat"}
-    )
-    @ApiErrorCodeExample(value = ErrorStatus.class, codes = {"FORBIDDEN", "BAD_REQUEST"})
-    public ResponseEntity<ApiResponse<ChatRoomResponse>> createChatRoom(
-            @Valid @RequestBody ChatRoomCreateRequest request,
-            @Parameter(description = "인증된 사용자 ID", hidden = true)
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
-
-        ChatRoomResponse response = chatService.createChatRoom(userPrincipal.getId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(true, "CHAT2001", "채팅방이 생성되었습니다.", response));
-    }
 
     @GetMapping("/rooms")
     @Operation(
@@ -84,22 +70,6 @@ public class ChatController {
         return ResponseEntity.ok(new ApiResponse<>(true, "CHAT2003", "채팅방을 조회했습니다.", response));
     }
 
-    @PostMapping("/rooms/{chatRoomId}/leave")
-    @Operation(
-            summary = "채팅방 나가기",
-            description = "채팅방에서 나갑니다. 나간 후에는 해당 채팅방의 메시지를 볼 수 없습니다.",
-            tags = {"Chat"}
-    )
-    @ApiErrorCodeExample(value = ErrorStatus.class, codes = {"NOT_FOUND", "FORBIDDEN"})
-    public ResponseEntity<ApiResponse<Void>> leaveChatRoom(
-            @Parameter(description = "채팅방 ID", required = true)
-            @PathVariable Long chatRoomId,
-            @Parameter(description = "인증된 사용자 ID", hidden = true)
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
-
-        chatService.leaveChatRoom(userPrincipal.getId(), chatRoomId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "CHAT2004", "채팅방에서 나갔습니다.", null));
-    }
 
     @GetMapping("/rooms/{chatRoomId}/messages")
     @Operation(
