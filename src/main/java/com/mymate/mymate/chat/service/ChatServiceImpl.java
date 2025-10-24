@@ -15,9 +15,11 @@ import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.notification.event.ChatMessageEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -39,6 +41,7 @@ public class ChatServiceImpl implements ChatService {
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -116,6 +119,21 @@ public class ChatServiceImpl implements ChatService {
 
         // WebSocket으로 메시지 전송
         messagingTemplate.convertAndSend("/topic/chat/" + request.getChatRoomId(), response);
+
+        // 채팅 메시지 이벤트 발행 (그룹 채팅방인 경우에만)
+        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
+                .orElseThrow(() -> new GeneralException(ErrorStatus.NOT_FOUND));
+        
+        if (chatRoom.getType().name().equals("GROUP")) {
+            String senderName = sender.getUsername() != null ? sender.getUsername() : sender.getEmail();
+            ChatMessageEvent event = new ChatMessageEvent(
+                chatRoom.getId(), 
+                memberId, 
+                senderName, 
+                request.getContent()
+            );
+            eventPublisher.publishEvent(event);
+        }
 
         log.info("CHAT:MESSAGE:SENT:::chatRoomId={}, senderId={}, messageId={}",
                 request.getChatRoomId(), memberId, message.getId());

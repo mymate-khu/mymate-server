@@ -20,8 +20,12 @@ import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.status.GroupErrorStatus;
 import com.mymate.mymate.member.Member;
 import com.mymate.mymate.member.repository.MemberRepository;
+import com.mymate.mymate.notification.event.SettlementCreatedEvent;
+import com.mymate.mymate.notification.event.SettlementUpdatedEvent;
+import com.mymate.mymate.notification.event.SettlementCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +50,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountParticipantRepository participantRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -82,6 +87,20 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
 
         participantRepository.saveAll(participants);
+
+        // 정산 생성 이벤트 발행
+        Member creator = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        String creatorName = creator.getUsername() != null ? creator.getUsername() : creator.getEmail();
+        
+        SettlementCreatedEvent event = new SettlementCreatedEvent(
+            groupId, 
+            memberId, 
+            savedAccount.getTitle(), 
+            creatorName, 
+            savedAccount.getTotalAmount().doubleValue()
+        );
+        eventPublisher.publishEvent(event);
 
         log.info("정산 생성 완료: accountId={}, groupId={}, createdBy={}",
                 savedAccount.getId(), groupId, memberId);
@@ -171,6 +190,20 @@ public class AccountServiceImpl implements AccountService {
         Account savedAccount = accountRepository.save(account);
         List<AccountParticipant> participants = participantRepository.findByAccountId(accountId);
 
+        // 정산 업데이트 이벤트 발행
+        Member updater = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        String updaterName = updater.getUsername() != null ? updater.getUsername() : updater.getEmail();
+        
+        SettlementUpdatedEvent event = new SettlementUpdatedEvent(
+            groupId, 
+            memberId, 
+            savedAccount.getTitle(), 
+            updaterName, 
+            savedAccount.getTotalAmount().doubleValue()
+        );
+        eventPublisher.publishEvent(event);
+
         log.info("정산 수정 완료: accountId={}, groupId={}, updatedBy={}",
                 accountId, groupId, memberId);
 
@@ -218,6 +251,22 @@ public class AccountServiceImpl implements AccountService {
 
         Account savedAccount = accountRepository.save(account);
         List<AccountParticipant> participants = participantRepository.findByAccountId(accountId);
+
+        // 정산 완료 이벤트 발행 (완료 상태로 변경된 경우에만)
+        if (request.getStatus() == AccountStatus.COMPLETED) {
+            Member completer = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+            String completerName = completer.getUsername() != null ? completer.getUsername() : completer.getEmail();
+            
+            SettlementCompletedEvent event = new SettlementCompletedEvent(
+                groupId, 
+                memberId, 
+                savedAccount.getTitle(), 
+                completerName, 
+                savedAccount.getTotalAmount().doubleValue()
+            );
+            eventPublisher.publishEvent(event);
+        }
 
         log.info("정산 상태 변경 완료: accountId={}, status={}, updatedBy={}",
                 accountId, request.getStatus(), memberId);

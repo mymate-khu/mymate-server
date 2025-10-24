@@ -14,8 +14,11 @@ import com.mymate.mymate.common.exception.group.GroupHandler;
 import com.mymate.mymate.group.status.GroupErrorStatus;
 import com.mymate.mymate.common.exception.member.MemberHandler;
 import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
+import com.mymate.mymate.notification.event.GroupInvitationEvent;
+import com.mymate.mymate.notification.event.GroupMemberJoinedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,7 @@ public class InvitationServiceImpl implements InvitationService {
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
     private final GroupService groupService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final int INVITATION_EXPIRY_HOURS = 24; // 24시간 후 만료
 
@@ -98,6 +102,15 @@ public class InvitationServiceImpl implements InvitationService {
 
                 Invitation savedInvitation = invitationRepository.save(invitation);
                 responses.add(new InvitationResponse(savedInvitation, group.getName(), inviterDisplayName));
+
+                // 그룹 초대 이벤트 발행
+                GroupInvitationEvent event = new GroupInvitationEvent(
+                    invitee.getId(), 
+                    inviterId, 
+                    group.getName(), 
+                    inviterDisplayName
+                );
+                eventPublisher.publishEvent(event);
 
                 log.info("초대 생성 완료: invitationId={}, groupId={}, inviterId={}, inviteeId={}", 
                         savedInvitation.getId(), group.getId(), inviterId, invitee.getId());
@@ -212,6 +225,21 @@ public class InvitationServiceImpl implements InvitationService {
         // 초대 상태를 수락으로 변경
         invitation.accept();
         invitationRepository.save(invitation);
+
+        // 그룹 멤버 가입 이벤트 발행
+        Group group = groupRepository.findById(invitation.getGroupId())
+                .orElseThrow(() -> new GroupHandler(GroupErrorStatus.GROUP_NOT_FOUND));
+        Member newMember = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        String memberDisplayName = newMember.getUsername() != null ? newMember.getUsername() : newMember.getEmail();
+        
+        GroupMemberJoinedEvent event = new GroupMemberJoinedEvent(
+            invitation.getGroupId(), 
+            memberId, 
+            group.getName(), 
+            memberDisplayName
+        );
+        eventPublisher.publishEvent(event);
 
         log.info("초대 수락 완료: invitationId={}, groupId={}, memberId={}", 
                 invitationId, invitation.getGroupId(), memberId);
