@@ -42,6 +42,12 @@ public class InvitationResponse {
     @Schema(description = "초대받은 사용자 ID", example = "456")
     private Long inviteeId;
     
+    @Schema(description = "초대받은 사용자 이름", example = "김철수")
+    private String inviteeName;
+    
+    @Schema(description = "초대받은 사용자 로그인 ID", example = "SZZYDE770")
+    private String inviteeMemberLoginId;
+    
     @Schema(description = "만료일시", example = "2024-01-22T10:30:00")
     private LocalDateTime expiresAt;
     
@@ -58,6 +64,20 @@ public class InvitationResponse {
         this.inviterId = invitation.getInviterId();
         this.inviterName = inviterName;
         this.inviteeId = invitation.getInviteeId();
+        this.expiresAt = invitation.getExpiresAt();
+        this.status = invitation.getStatus();
+        this.createdAt = invitation.getCreatedAt();
+    }
+
+    public InvitationResponse(Invitation invitation, String groupName, String inviterName, String inviteeName, String inviteeMemberLoginId) {
+        this.id = invitation.getId();
+        this.groupId = invitation.getGroupId();
+        this.groupName = groupName;
+        this.inviterId = invitation.getInviterId();
+        this.inviterName = inviterName;
+        this.inviteeId = invitation.getInviteeId();
+        this.inviteeName = inviteeName;
+        this.inviteeMemberLoginId = inviteeMemberLoginId;
         this.expiresAt = invitation.getExpiresAt();
         this.status = invitation.getStatus();
         this.createdAt = invitation.getCreatedAt();

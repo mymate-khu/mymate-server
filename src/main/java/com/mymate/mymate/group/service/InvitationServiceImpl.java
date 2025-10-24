@@ -135,6 +135,55 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
+    public List<InvitationResponse> getSentInvitations(Long memberId) {
+        List<Invitation> invitations = invitationRepository.findByInviterIdOrderByCreatedAtDesc(memberId);
+        
+        return invitations.stream()
+                .map(invitation -> {
+                    Group group = groupRepository.findById(invitation.getGroupId())
+                            .orElseThrow(() -> new GroupHandler(GroupErrorStatus.GROUP_NOT_FOUND));
+                    
+                    Member inviter = memberRepository.findById(invitation.getInviterId())
+                            .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                    
+                    Member invitee = memberRepository.findById(invitation.getInviteeId())
+                            .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                    
+                    String inviterDisplayName = inviter.getUsername() != null ? inviter.getUsername() : inviter.getEmail();
+                    String inviteeDisplayName = invitee.getUsername() != null ? invitee.getUsername() : invitee.getEmail();
+                    String inviteeMemberLoginId = invitee.getUserId();
+                    
+                    return new InvitationResponse(invitation, group.getName(), inviterDisplayName, inviteeDisplayName, inviteeMemberLoginId);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<InvitationResponse> getSentInvitations(Long memberId, String status) {
+        Invitation.InvitationStatus invitationStatus = Invitation.InvitationStatus.valueOf(status.toUpperCase());
+        List<Invitation> invitations = invitationRepository.findByInviterIdAndStatusOrderByCreatedAtDesc(memberId, invitationStatus);
+        
+        return invitations.stream()
+                .map(invitation -> {
+                    Group group = groupRepository.findById(invitation.getGroupId())
+                            .orElseThrow(() -> new GroupHandler(GroupErrorStatus.GROUP_NOT_FOUND));
+                    
+                    Member inviter = memberRepository.findById(invitation.getInviterId())
+                            .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                    
+                    Member invitee = memberRepository.findById(invitation.getInviteeId())
+                            .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+                    
+                    String inviterDisplayName = inviter.getUsername() != null ? inviter.getUsername() : inviter.getEmail();
+                    String inviteeDisplayName = invitee.getUsername() != null ? invitee.getUsername() : invitee.getEmail();
+                    String inviteeMemberLoginId = invitee.getUserId();
+                    
+                    return new InvitationResponse(invitation, group.getName(), inviterDisplayName, inviteeDisplayName, inviteeMemberLoginId);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void acceptInvitation(Long invitationId, Long memberId) {
         Invitation invitation = invitationRepository.findById(invitationId)
