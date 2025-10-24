@@ -15,8 +15,7 @@ import lombok.*;
 public class ChatRoom extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // groupId와 동일한 값 사용
 
     @Column(name = "group_id", nullable = false)
     private Long groupId;
@@ -31,6 +30,17 @@ public class ChatRoom extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    // ChatRoom 생성 시 id와 groupId를 동일하게 설정하는 생성자
+    public static ChatRoom createForGroup(Long groupId, String name, ChatRoomType type) {
+        return ChatRoom.builder()
+                .id(groupId)
+                .groupId(groupId)
+                .name(name)
+                .type(type)
+                .isActive(true)
+                .build();
+    }
 
     public void updateName(String name) {
         this.name = name;
