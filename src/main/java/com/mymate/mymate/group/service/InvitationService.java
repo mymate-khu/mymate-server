@@ -11,6 +11,10 @@ public interface InvitationService {
     
     List<InvitationResponse> getMyInvitations(Long memberId);
     
+    List<InvitationResponse> getSentInvitations(Long memberId);
+    
+    List<InvitationResponse> getSentInvitations(Long memberId, String status);
+    
     void acceptInvitation(Long invitationId, Long memberId);
     
     void cancelInvitation(Long invitationId, Long memberId);

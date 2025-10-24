@@ -82,6 +82,33 @@ public class InvitationController {
         return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_LIST_FETCHED, response);
     }
 
+    @GetMapping("/sent")
+    @Operation(
+        summary = "보낸 초대 목록 조회", 
+        description = "현재 사용자가 보낸 초대 목록을 조회합니다. 초대 상태별 필터링이 가능합니다.",
+        tags = {"Invitation"}
+    )
+    @ApiErrorCodeExamples({
+        @ApiErrorCodeExample(
+            value = GroupErrorStatus.class,
+            codes = {"INVITATION_NOT_FOUND"}
+        )
+    })
+    public ResponseEntity<ApiResponse<List<InvitationResponse>>> getSentInvitations(
+            @Parameter(description = "초대 상태 필터 (PENDING, ACCEPTED, EXPIRED, CANCELED)", required = false)
+            @RequestParam(required = false) String status,
+            @Parameter(description = "인증된 사용자 ID", hidden = true)
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        List<InvitationResponse> response;
+        if (status != null && !status.trim().isEmpty()) {
+            response = invitationService.getSentInvitations(userPrincipal.getId(), status);
+        } else {
+            response = invitationService.getSentInvitations(userPrincipal.getId());
+        }
+        return ApiResponse.onSuccess(GroupSuccessStatus.INVITATION_LIST_FETCHED, response);
+    }
+
     @PostMapping("/{invitationId}/accept")
     @Operation(
         summary = "초대 수락", 

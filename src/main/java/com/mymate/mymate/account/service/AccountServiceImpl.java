@@ -13,6 +13,8 @@ import com.mymate.mymate.account.repository.AccountRepository;
 import com.mymate.mymate.common.exception.account.AccountHandler;
 import com.mymate.mymate.common.exception.account.status.AccountErrorStatus;
 import com.mymate.mymate.common.exception.group.GroupHandler;
+import com.mymate.mymate.common.exception.member.MemberHandler;
+import com.mymate.mymate.common.exception.member.status.MemberErrorStatus;
 import com.mymate.mymate.group.entity.GroupMember;
 import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.status.GroupErrorStatus;
@@ -413,7 +415,11 @@ public class AccountServiceImpl implements AccountService {
      * 사용자의 그룹 ID를 조회하는 헬퍼 메서드
      */
     private Long getUserGroupId(Long memberId) {
-        List<GroupMember> groupMembers = groupMemberRepository.findByMemberId(memberId);
+        // 멤버 정보 조회
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
+        
+        List<GroupMember> groupMembers = groupMemberRepository.findByMemberId(member.getId());
         if (groupMembers.isEmpty()) {
             throw new GroupHandler(GroupErrorStatus.GROUP_NOT_FOUND);
         }

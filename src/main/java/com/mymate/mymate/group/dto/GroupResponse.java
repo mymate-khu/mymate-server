@@ -19,8 +19,8 @@ import java.util.List;
   "updatedAt": "2024-01-15T10:30:00",
   "members": [
     {
-      "id": 1,
-      "memberId": 123,
+      "memberLoginId": "SZZYDE770",
+      "username": "홍길동",
       "joinedAt": "2024-01-15T10:30:00"
     }
   ]
@@ -59,18 +59,18 @@ public class GroupResponse {
     @NoArgsConstructor
     @Schema(description = "그룹 멤버 정보")
     public static class MemberResponse {
-        @Schema(description = "멤버십 ID", example = "1")
-        private Long id;
+        @Schema(description = "멤버 로그인 ID", example = "SZZYDE770")
+        private String memberLoginId;
         
-        @Schema(description = "멤버 ID", example = "123")
-        private Long memberId;
+        @Schema(description = "사용자명", example = "홍길동")
+        private String username;
         
         @Schema(description = "가입일시", example = "2024-01-15T10:30:00")
         private LocalDateTime joinedAt;
 
-        public MemberResponse(Long id, Long memberId, LocalDateTime joinedAt) {
-            this.id = id;
-            this.memberId = memberId;
+        public MemberResponse(String memberLoginId, String username, LocalDateTime joinedAt) {
+            this.memberLoginId = memberLoginId;
+            this.username = username;
             this.joinedAt = joinedAt;
         }
     }
