@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,19 +54,37 @@ public class MateBoardServiceImpl implements MateBoardService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberHandler(MemberErrorStatus.MEMBER_NOT_FOUND));
 
-        // 메이트보드 생성
-        MateBoard mateBoard = MateBoard.builder()
-                .memberId(memberId)
-                .groupId(groupId)
-                .content(request.getContent())
-                .build();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+        
+        // 오늘 날짜의 기존 메이트보드 조회
+        Optional<MateBoard> existingMateBoard = mateBoardRepository.findByMemberIdAndDate(memberId, startOfDay, endOfDay);
+        
+        MateBoard savedMateBoard;
+        if (existingMateBoard.isPresent()) {
+            // 기존 메이트보드가 있으면 내용 업데이트
+            MateBoard mateBoard = existingMateBoard.get();
+            mateBoard.updateContent(request.getContent());
+            savedMateBoard = mateBoardRepository.save(mateBoard);
+            
+            log.info("메이트보드 업데이트 완료: mateBoardId={}, memberId={}, groupId={}",
+                    savedMateBoard.getId(), memberId, groupId);
+        } else {
+            // 기존 메이트보드가 없으면 새로 생성
+            MateBoard mateBoard = MateBoard.builder()
+                    .memberId(memberId)
+                    .groupId(groupId)
+                    .content(request.getContent())
+                    .build();
 
-        MateBoard savedMateBoard = mateBoardRepository.save(mateBoard);
+            savedMateBoard = mateBoardRepository.save(mateBoard);
+            
+            log.info("메이트보드 생성 완료: mateBoardId={}, memberId={}, groupId={}",
+                    savedMateBoard.getId(), memberId, groupId);
+        }
 
         String memberName = member.getUsername() != null ? member.getUsername() : member.getEmail();
-
-        log.info("메이트보드 생성 완료: mateBoardId={}, memberId={}, groupId={}",
-                savedMateBoard.getId(), memberId, groupId);
 
         return new MateBoardResponse(savedMateBoard, memberName, true);
     }
@@ -109,8 +128,8 @@ public class MateBoardServiceImpl implements MateBoardService {
         Long groupId = groupMembers.get(0).getGroupId();
         LocalDateTime now = LocalDateTime.now();
 
-        // 그룹의 만료되지 않은 메이트보드 목록 조회
-        Page<MateBoard> mateBoardPage = mateBoardRepository.findByGroupIdAndNotExpired(groupId, now, pageable);
+        // 그룹의 만료되지 않은 메이트보드 목록 조회 (본인 메이트보드 제외)
+        Page<MateBoard> mateBoardPage = mateBoardRepository.findByGroupIdAndNotExpiredAndNotMemberId(groupId, now, memberId, pageable);
 
         List<MateBoardResponse> mateBoardResponses = mateBoardPage.getContent().stream()
                 .map(mateBoard -> {
