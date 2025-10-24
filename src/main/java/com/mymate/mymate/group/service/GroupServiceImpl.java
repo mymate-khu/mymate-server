@@ -9,6 +9,11 @@ import com.mymate.mymate.group.repository.GroupMemberRepository;
 import com.mymate.mymate.group.repository.GroupRepository;
 import com.mymate.mymate.member.repository.MemberRepository;
 import com.mymate.mymate.puzzle.repository.PuzzleRepository;
+import com.mymate.mymate.chat.entity.ChatRoom;
+import com.mymate.mymate.chat.entity.ChatParticipant;
+import com.mymate.mymate.chat.enums.ChatRoomType;
+import com.mymate.mymate.chat.repository.ChatRoomRepository;
+import com.mymate.mymate.chat.repository.ChatParticipantRepository;
 import com.mymate.mymate.common.exception.group.GroupHandler;
 import com.mymate.mymate.group.status.GroupErrorStatus;
 import com.mymate.mymate.common.exception.member.MemberHandler;
@@ -31,6 +36,8 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
     private final PuzzleRepository puzzleRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatParticipantRepository chatParticipantRepository;
 
     @Override
     @Transactional
@@ -58,7 +65,23 @@ public class GroupServiceImpl implements GroupService {
         
         groupMemberRepository.save(ownerMember);
 
-        log.info("그룹 생성 완료: groupId={}, ownerId={}, name={}", savedGroup.getId(), ownerId, groupName);
+        // 그룹 생성 시 채팅방 자동 생성 (ID는 groupId와 동일)
+        ChatRoom chatRoom = ChatRoom.createForGroup(
+                savedGroup.getId(),
+                savedGroup.getName() + " 채팅방",
+                ChatRoomType.GROUP
+        );
+        chatRoomRepository.save(chatRoom);
+
+        // 그룹 멤버를 채팅방 참여자로 추가
+        ChatParticipant chatParticipant = ChatParticipant.builder()
+                .chatRoomId(chatRoom.getId())
+                .memberId(ownerId)
+                .build();
+        chatParticipantRepository.save(chatParticipant);
+
+        log.info("그룹 및 채팅방 생성 완료: groupId={}, chatRoomId={}, ownerId={}, name={}", 
+                savedGroup.getId(), chatRoom.getId(), ownerId, groupName);
 
         return new GroupResponse(savedGroup, List.of());
     }
@@ -100,17 +123,30 @@ public class GroupServiceImpl implements GroupService {
         if (group.getOwnerId().equals(memberId)) {
             List<GroupMember> remainingMembers = groupMemberRepository.findByGroupId(groupId);
             if (remainingMembers.size() == 1) {
-                // 퍼즐 먼저 일괄 삭제 후 그룹 삭제
+                // 퍼즐 먼저 일괄 삭제
                 puzzleRepository.deleteByGroupId(groupId);
+                
+                // 채팅방 삭제 (ID가 groupId와 동일하므로)
+                chatRoomRepository.deleteById(groupId);
+                
+                // 그룹 삭제
                 groupRepository.delete(group);
-                log.info("그룹 삭제됨 (소유자 탈퇴): groupId={}", groupId);
+                log.info("그룹 및 채팅방 삭제됨 (소유자 탈퇴): groupId={}", groupId);
                 return;
             }
         }
 
         // 그룹 멤버에서 제거
         groupMemberRepository.delete(groupMember);
-        log.info("그룹 탈퇴 완료: groupId={}, memberId={}", groupId, memberId);
+
+        // 채팅방 참여자에서도 제거
+        chatParticipantRepository.findByChatRoomIdAndMemberIdAndIsActiveTrue(groupId, memberId)
+                .ifPresent(participant -> {
+                    participant.leave();
+                    chatParticipantRepository.save(participant);
+                });
+
+        log.info("그룹 탈퇴 및 채팅방 참여자 제거 완료: groupId={}, memberId={}", groupId, memberId);
     }
 
     @Override
@@ -133,7 +169,15 @@ public class GroupServiceImpl implements GroupService {
         }
 
         groupMemberRepository.delete(groupMember);
-        log.info("그룹 멤버 제거 완료: groupId={}, removedMemberId={}, requesterId={}", 
+
+        // 채팅방 참여자에서도 제거
+        chatParticipantRepository.findByChatRoomIdAndMemberIdAndIsActiveTrue(groupId, memberId)
+                .ifPresent(participant -> {
+                    participant.leave();
+                    chatParticipantRepository.save(participant);
+                });
+
+        log.info("그룹 멤버 및 채팅방 참여자 제거 완료: groupId={}, removedMemberId={}, requesterId={}", 
                 groupId, memberId, requesterId);
     }
 
@@ -156,6 +200,13 @@ public class GroupServiceImpl implements GroupService {
         // 기존 그룹에서 탈퇴 처리 (단일 그룹 정책)
         List<GroupMember> existingMemberships = groupMemberRepository.findByMemberId(memberId);
         for (GroupMember existingMembership : existingMemberships) {
+            // 기존 채팅방 참여자에서도 제거
+            chatParticipantRepository.findByChatRoomIdAndMemberIdAndIsActiveTrue(existingMembership.getGroupId(), memberId)
+                    .ifPresent(participant -> {
+                        participant.leave();
+                        chatParticipantRepository.save(participant);
+                    });
+            
             groupMemberRepository.delete(existingMembership);
         }
 
@@ -166,7 +217,15 @@ public class GroupServiceImpl implements GroupService {
                 .build();
         
         groupMemberRepository.save(newMember);
-        log.info("그룹 멤버 추가 완료: groupId={}, memberId={}, requesterId={}", 
+
+        // 그룹의 채팅방에 멤버를 참여자로 추가
+        ChatParticipant chatParticipant = ChatParticipant.builder()
+                .chatRoomId(groupId) // 채팅방 ID는 groupId와 동일
+                .memberId(memberId)
+                .build();
+        chatParticipantRepository.save(chatParticipant);
+
+        log.info("그룹 멤버 및 채팅방 참여자 추가 완료: groupId={}, memberId={}, requesterId={}", 
                 groupId, memberId, requesterId);
     }
 
@@ -184,6 +243,13 @@ public class GroupServiceImpl implements GroupService {
         // 그룹 이름 업데이트
         group.updateName(request.getName());
         Group savedGroup = groupRepository.save(group);
+
+        // 채팅방 이름도 함께 업데이트
+        chatRoomRepository.findById(groupId)
+                .ifPresent(chatRoom -> {
+                    chatRoom.updateName(request.getName() + " 채팅방");
+                    chatRoomRepository.save(chatRoom);
+                });
 
         // 그룹의 모든 멤버 조회
         List<GroupMember> allMembers = groupMemberRepository.findByGroupId(groupId);
