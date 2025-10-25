@@ -70,7 +70,7 @@ public class NotificationEventListener {
             );
             
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 새로 가입한 멤버 제외
+                 if (!memberId.equals(event.getSenderId())) { // 새로 가입한 멤버 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -81,7 +81,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
             log.info("그룹 멤버 가입 알림 발송 완료: groupName={}, memberName={}", 
                     event.getGroupName(), event.getMemberName());
@@ -102,7 +102,7 @@ public class NotificationEventListener {
             List<Long> memberIds = groupMemberRepository.findMemberIdsByGroupId(event.getGroupId());
             
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 생성자 제외
+                 if (!memberId.equals(event.getSenderId())) { // 생성자 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -113,7 +113,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
             log.info("퍼즐 생성 알림 발송 완료: groupId={}, puzzleTitle={}", 
                     event.getGroupId(), event.getPuzzleTitle());
@@ -164,7 +164,7 @@ public class NotificationEventListener {
             List<Long> memberIds = groupMemberRepository.findMemberIdsByGroupId(event.getGroupId());
             
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 발송자 제외
+                 if (!memberId.equals(event.getSenderId())) { // 발송자 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -175,7 +175,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
             log.info("채팅 메시지 알림 발송 완료: groupId={}, senderName={}", 
                     event.getGroupId(), event.getSenderName());
@@ -196,7 +196,7 @@ public class NotificationEventListener {
              List<Long> memberIds = groupMemberRepository.findMemberIdsByGroupId(event.getGroupId());
              
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 생성자 제외
+                 if (!memberId.equals(event.getSenderId())) { // 생성자 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -207,7 +207,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
              log.info("정산 생성 알림 발송 완료: groupId={}, settlementTitle={}", 
                      event.getGroupId(), event.getSettlementTitle());
@@ -228,7 +228,7 @@ public class NotificationEventListener {
              List<Long> memberIds = groupMemberRepository.findMemberIdsByGroupId(event.getGroupId());
              
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 업데이트자 제외
+                 if (!memberId.equals(event.getSenderId())) { // 업데이트자 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -239,7 +239,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
              log.info("정산 업데이트 알림 발송 완료: groupId={}, settlementTitle={}", 
                      event.getGroupId(), event.getSettlementTitle());
@@ -260,7 +260,7 @@ public class NotificationEventListener {
              List<Long> memberIds = groupMemberRepository.findMemberIdsByGroupId(event.getGroupId());
              
              for (Long memberId : memberIds) {
-                 // if (!memberId.equals(event.getSenderId())) { // 완료자 제외
+                 if (!memberId.equals(event.getSenderId())) { // 완료자 제외
                      composerService.composeAndSend(
                          memberId, 
                          event.getSenderId(), 
@@ -271,7 +271,7 @@ public class NotificationEventListener {
                          event.getNavigationUrl(), 
                          event.getData()
                      );
-                 // }
+                 }
              }
              log.info("정산 완료 알림 발송 완료: groupId={}, settlementTitle={}", 
                      event.getGroupId(), event.getSettlementTitle());
